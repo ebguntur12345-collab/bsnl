@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gray-50 text-gray-900 font-sans;
+    overflow: hidden;
+  }
+}
+
+@layer components {
+  .blue-gradient {
+    background: linear-gradient(180deg, #005BAA 0%, #00D2FF 100%);
+  }
+
+  .header-gradient {
+    background: linear-gradient(90deg, #002D62 0%, #005BAA 100%);
+  }
+
+  .cyan-gradient {
+    background: linear-gradient(90deg, #00B4D8 0%, #00D2FF 100%);
+  }
+  
+  .card-hover {
+    @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+  }
+  
+  .sidebar-link {
+    @apply flex items-center gap-3 px-4 py-3 rounded-lg transition-colors duration-200 text-white hover:bg-white/20;
+  }
+  
+  .sidebar-link-active {
+    @apply flex items-center gap-3 px-4 py-3 rounded-lg bg-[#002D62] text-white font-black shadow-xl border-l-4 border-cyan-300;
+  }
+  
+  .table-header-gradient {
+    @apply cyan-gradient text-white;
+  }
+}
+
+/* Custom Scrollbar for content area */
+.content-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.content-scroll::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+.content-scroll::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 rounded-full hover:bg-gray-400;
+}
