@@ -1,11 +1,20 @@
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import Sidebar from './Sidebar';
 import TopNavbar from './TopNavbar';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import { MessageCircle } from 'lucide-react';
 
 const Layout = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = React.useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Security Check: Ensure user is logged in
+    const isAuth = localStorage.getItem('adminAuth');
+    if (!isAuth) {
+      navigate('/login');
+    }
+  }, [navigate]);
 
   const toggleSidebar = () => setSidebarOpen(prev => !prev);
 

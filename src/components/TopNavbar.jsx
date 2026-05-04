@@ -1,7 +1,15 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Search, Bell, User, LogOut, Menu, X } from 'lucide-react';
 
 const TopNavbar = ({ toggleSidebar, sidebarOpen }) => {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem('adminAuth');
+    navigate('/login');
+  };
+
   return (
     <nav className="h-[60px] header-gradient fixed top-0 left-0 right-0 flex items-center justify-between px-6 z-40 shadow-lg">
       {/* Left: Hamburger + Title */}
@@ -54,7 +62,11 @@ const TopNavbar = ({ toggleSidebar, sidebarOpen }) => {
           </div>
         </div>
 
-        <button className="text-white/60 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-full" title="Logout">
+        <button 
+          onClick={handleLogout}
+          className="text-white/60 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-full" 
+          title="Logout"
+        >
           <LogOut size={20} />
         </button>
       </div>

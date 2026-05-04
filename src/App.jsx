@@ -17,6 +17,7 @@ import BulkCCTs from './pages/BulkCCTs';
 import CCTRegistration from './pages/CCTRegistration';
 import LeasedLines from './pages/LeasedLines';
 import PdfViewer from './pages/PdfViewer';
+import Login from './pages/Login';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 import CategoryPdfs from './pages/CategoryPdfs';
@@ -28,23 +29,11 @@ const PdfViewerWithParam = () => {
   return <PdfViewer title={docTitle.replace(/-/g, ' ')} />;
 };
 
-// Placeholder components for other pages
-const Placeholder = ({ title }) => (
-  <div className="flex flex-col items-center justify-center h-full text-gray-400 space-y-4">
-    <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center">
-      <span className="text-4xl font-bold">?</span>
-    </div>
-    <div className="text-center">
-      <h2 className="text-2xl font-bold text-gray-700">{title} Page</h2>
-      <p>This module is currently being updated with latest data.</p>
-    </div>
-  </div>
-);
-
 function App() {
   return (
     <Router>
       <Routes>
+        <Route path="/login" element={<Login />} />
         <Route path="/" element={<Layout />}>
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />

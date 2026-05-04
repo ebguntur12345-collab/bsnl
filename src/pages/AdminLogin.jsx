@@ -16,8 +16,10 @@ const AdminLogin = () => {
 
   const handleLogin = (e) => {
     e.preventDefault();
-    // Updated credentials as requested
-    if (email === 'admin@bsnl.co.in' && password === 'admin123') {
+    const envEmail = import.meta.env.VITE_ADMIN_EMAIL;
+    const envPass = import.meta.env.VITE_ADMIN_PASSWORD;
+
+    if (email === envEmail && password === envPass) {
       localStorage.setItem('adminAuth', 'true');
       navigate('/admin/dashboard');
     } else {
