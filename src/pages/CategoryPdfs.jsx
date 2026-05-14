@@ -99,7 +99,7 @@ const CategoryPdfs = () => {
     switch(module) {
       case 'Tariffs': return '/tariffs';
       case 'Forms': return '/forms';
-      default: return '/leased-lines/bulk-ccts';
+      default: return '/tariffs';
     }
   };
 

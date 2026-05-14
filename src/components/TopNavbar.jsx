@@ -28,32 +28,12 @@ const TopNavbar = ({ toggleSidebar, sidebarOpen }) => {
           className="h-12 w-auto object-contain drop-shadow-lg brightness-110"
         />
         
-        <div className="hidden md:flex items-center gap-3">
-          <div className="relative">
-            <span className="absolute inset-y-0 left-3 flex items-center text-gray-500">
-              <Search size={18} />
-            </span>
-            <input 
-              type="text" 
-              placeholder="Search for customers, lines, or tariffs..."
-              className="w-[400px] pl-10 pr-4 py-2.5 bg-dark-card border border-dark-border focus:ring-2 focus:ring-primary/20 rounded-xl transition-all outline-none text-sm text-gray-300 placeholder:text-gray-600"
-            />
-          </div>
-        </div>
+
       </div>
 
       {/* Right: Actions */}
       <div className="flex items-center gap-6">
-        <div className="flex items-center gap-2">
-          <button className="relative text-gray-400 hover:text-white transition-colors p-2.5 hover:bg-white/5 rounded-xl border border-transparent hover:border-dark-border">
-            <Bell size={20} />
-            <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-primary rounded-full shadow-[0_0_10px_rgba(0,180,216,0.5)]"></span>
-          </button>
-          
-          <button className="text-gray-400 hover:text-white transition-colors p-2.5 hover:bg-white/5 rounded-xl border border-transparent hover:border-dark-border">
-            <Menu size={20} className="rotate-90" />
-          </button>
-        </div>
+
         
         <div className="h-8 w-[1px] bg-dark-border"></div>
 

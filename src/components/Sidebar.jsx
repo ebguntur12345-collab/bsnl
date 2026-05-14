@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
+import { useEffect } from 'react';
 import { 
   LayoutDashboard, 
   Users, 
@@ -19,7 +21,16 @@ import {
 
 const Sidebar = ({ isOpen, onClose }) => {
   const [openDropdowns, setOpenDropdowns] = useState({});
+  const [dynamicCats, setDynamicCats] = useState([]);
   const location = useLocation();
+
+  useEffect(() => {
+    const fetchCats = async () => {
+      const { data } = await supabase.from('categories').select('*').order('name', { ascending: true });
+      if (data) setDynamicCats(data);
+    };
+    fetchCats();
+  }, []);
 
   const toggleDropdown = (name) => {
     setOpenDropdowns(prev => ({
@@ -55,7 +66,6 @@ const Sidebar = ({ isOpen, onClose }) => {
       route: '/leased-lines',
       hasDropdown: true,
       subItems: [
-        { name: 'Bulk CCTs', route: '/leased-lines/bulk-ccts' },
         { name: 'CCT Registration', route: '/leased-lines/registration' }
       ]
     },
@@ -71,6 +81,10 @@ const Sidebar = ({ isOpen, onClose }) => {
         { name: 'Mobile Postpaid', route: '/tariffs/mobile-postpaid' },
         { name: 'MMVC OBD', route: '/tariffs/mmvc-obd' },
         { name: 'FTTH', route: '/tariffs/ftth' },
+        ...dynamicCats.filter(c => c.module === 'Tariffs').map(c => ({
+          name: c.name,
+          route: `/module-documents/Tariffs/${c.name}`
+        }))
       ]
     },
     { 
@@ -83,6 +97,10 @@ const Sidebar = ({ isOpen, onClose }) => {
         { name: 'SIP Trunk', route: '/forms/sip-trunk' },
         { name: 'FTTH CAF', route: '/forms/ftth-caf' },
         { name: 'Mobile', route: '/forms/mobile' },
+        ...dynamicCats.filter(c => c.module === 'Forms').map(c => ({
+          name: c.name,
+          route: `/module-documents/Forms/${c.name}`
+        }))
       ]
     },
     { name: 'Charts', icon: BarChart3, route: '/charts' },

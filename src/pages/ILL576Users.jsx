@@ -10,9 +10,10 @@ const ILL576Users = () => {
 
   useEffect(() => {
     const all = JSON.parse(localStorage.getItem('cctRegistrations') || '[]');
-    // Filter only ILL CCTs service users
+    // Filter only ILL CCTs service users - check both field names
     const illUsers = all.filter(r =>
-      (r.service || '').toLowerCase().includes('ill')
+      (r.service || '').toLowerCase().includes('ill') ||
+      (r.serviceType || '').toLowerCase().includes('ill')
     );
     setUsers(illUsers);
   }, []);
@@ -47,7 +48,7 @@ const ILL576Users = () => {
             <Laptop size={24} className="text-white" />
           </div>
           <div>
-            <h1 className="text-3xl font-black text-white tracking-tight">ILL CCTs — 576 Users</h1>
+            <h1 className="text-3xl font-black text-white tracking-tight">ILL CCTs — {users.length} Users</h1>
             <p className="text-gray-400 text-sm font-medium">
               {filtered.length} registered ILL circuit customer{filtered.length !== 1 ? 's' : ''} found
             </p>

@@ -1,5 +1,6 @@
 /** UPDATED LEASED LINES GRID - VERSION 2 **/
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
 import { 
   Monitor, 
   Server, 
@@ -13,14 +14,17 @@ import {
   Vote,
   Leaf,
   Stethoscope,
-  PhoneForwarded
+  PhoneForwarded,
+  Zap,
+  ShoppingCart,
+  CheckCircle,
+  CreditCard
 } from 'lucide-react';
 
 import { Link } from 'react-router-dom';
 
 const LeasedLineCard = ({ title, value, icon: Icon, colorClass, footerText = "Explore", to }) => (
   <div className="bg-dark-card rounded-2xl border border-dark-border overflow-hidden card-hover group relative">
-    <div className={`h-1.5 w-full bg-gradient-to-r ${colorClass} opacity-80 group-hover:opacity-100 transition-opacity`}></div>
     <div className="p-6 flex items-center justify-between">
       <div className="w-12 h-12 rounded-xl bg-dark-bg border border-dark-border flex items-center justify-center text-gray-500 group-hover:text-primary group-hover:border-primary/30 transition-all">
         <Icon size={26} strokeWidth={1.5} />
@@ -49,22 +53,74 @@ const LeasedLineCard = ({ title, value, icon: Icon, colorClass, footerText = "Ex
 );
 
 const LeasedLines = () => {
-  const leasedLineData = [
-    { title: "ILL CCTs", value: "ILL 576", icon: Laptop, colorClass: "from-blue-500 to-cyan-400", to: "/leased-lines/ill-576" },
-    { title: "MPLS CCTs", value: "MPLS 250", icon: Server, colorClass: "from-red-500 to-orange-400" },
-    { title: "ISDN PRI", value: "PRI 97", icon: Phone, colorClass: "from-rose-500 to-red-400" },
-    { title: "SIP Trunks", value: "SIP 33", icon: PhoneCall, colorClass: "from-lime-500 to-green-400" },
-    { title: "MMVC", value: "MMVC 33", icon: Keyboard, colorClass: "from-purple-500 to-blue-500" },
-    { title: "NMECT CCTs", value: "NMECT 33", icon: Monitor, colorClass: "from-cyan-400 to-blue-500" },
-    { title: "DOJ", value: "ILL 576", icon: Building2, colorClass: "from-indigo-500 to-blue-600", footerText: "Details" },
-    { title: "CGGB", value: "MPLS 279", icon: Users, colorClass: "from-blue-600 to-indigo-700", footerText: "Explore" },
-    { title: "Election Comission", value: "Toll Free 1950", icon: Vote, colorClass: "from-emerald-500 to-green-500" },
-    { title: "Tobacco Board", value: "ILL 33", icon: Leaf, colorClass: "from-teal-500 to-emerald-400" },
-    { title: "NREGS", value: "FTTH 558", icon: RefreshCw, colorClass: "from-orange-500 to-amber-500" },
-    { title: "Collectorates", value: "ILL 13", icon: Building2, colorClass: "from-pink-500 to-rose-500", footerText: "Details" },
-    { title: "NHM", value: "FTTH ILL", icon: Stethoscope, colorClass: "from-red-500 to-rose-400", footerText: "Details" },
-    { title: "Toll FREE", value: "Tolle Free", icon: PhoneForwarded, colorClass: "from-green-500 to-emerald-500" },
-  ];
+  const [metrics, setMetrics] = useState([]);
+  const iconMap = { 
+    Laptop, Server, Phone, PhoneCall, Keyboard, Monitor, 
+    Building2, Users, Vote, Leaf, RefreshCw, Stethoscope, 
+    PhoneForwarded, Zap, ShoppingCart, CheckCircle, CreditCard 
+  };
+
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      const { data } = await supabase.from('enterprise_metrics').select('*').order('created_at', { ascending: true });
+      
+      const regs = JSON.parse(localStorage.getItem('cctRegistrations') || '[]');
+      
+      const processMetricValue = (m) => {
+        if (!m.service_type || m.service_type === 'None') return m.value || '0';
+        const count = regs.filter(r => {
+          const rService = (r.serviceType || r.service || '').toLowerCase();
+          const mService = (m.service_type || '').toLowerCase();
+          const mTitle = (m.title || '').toLowerCase();
+          if (!mService || mService === 'none') {
+            return rService === mTitle;
+          }
+          
+          return rService === mService || 
+                 rService === mTitle ||
+                 (rService.includes('ill') && mService.includes('ill')) ||
+                 (rService.includes('mpls') && mService.includes('mpls')) ||
+                 (rService.includes('sip') && mService.includes('sip')) ||
+                 (rService.includes('pri') && mService.includes('pri')) ||
+                 (rService.includes('ftth') && mService.includes('ftth')) ||
+                 (rService.includes('mmvc') && mService.includes('mmvc'));
+        }).length;
+        const prefix = m.title.split(' ')[0] || '';
+        return `${prefix} ${count}`;
+      };
+
+      if (data && data.length > 0) {
+        setMetrics(data.map(m => ({
+          ...m,
+          value: processMetricValue(m),
+          icon: iconMap[m.icon_name] || Building2
+        })));
+      } else {
+        // Fallback
+        const defaults = [
+          { title: "ILL CCTs", service_type: "Internet Leased Line (ILL)", icon: Laptop },
+          { title: "MPLS CCTs", service_type: "MPLS", icon: Server },
+          { title: "ISDN PRI", service_type: "ISDN PRI", icon: Phone },
+          { title: "SIP Trunks", service_type: "SIP Trunk", icon: PhoneCall },
+          { title: "MMVC", service_type: "MMVC", icon: Keyboard },
+          { title: "NMECT CCTs", service_type: "None", value: "NMECT 33", icon: Monitor },
+          { title: "DOJ", service_type: "Internet Leased Line (ILL)", icon: Building2, footerText: "Details" },
+          { title: "CGGB", service_type: "MPLS", icon: Users, footerText: "Explore" },
+          { title: "Election Comission", service_type: "Toll Free", icon: Vote },
+          { title: "Tobacco Board", service_type: "Internet Leased Line (ILL)", icon: Leaf },
+          { title: "NREGS", service_type: "FTTH", icon: RefreshCw },
+          { title: "Collectorates", service_type: "Internet Leased Line (ILL)", icon: Building2, footerText: "Details" },
+          { title: "NHM", service_type: "FTTH", icon: Stethoscope, footerText: "Details" },
+          { title: "Toll FREE", service_type: "Toll Free", icon: PhoneForwarded },
+        ];
+        setMetrics(defaults.map(m => ({
+          ...m,
+          value: m.value || processMetricValue(m)
+        })));
+      }
+    };
+    fetchMetrics();
+  }, []);
 
   return (
     <div className="p-8 space-y-8 animate-in fade-in duration-700 max-w-[1600px] mx-auto min-h-screen">
@@ -74,7 +130,7 @@ const LeasedLines = () => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-20">
-        {leasedLineData.map((item, index) => (
+        {metrics.map((item, index) => (
           <LeasedLineCard key={index} {...item} />
         ))}
       </div>

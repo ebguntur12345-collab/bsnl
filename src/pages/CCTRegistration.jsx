@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, Check, CheckCircle } from 'lucide-react';
 import { statesData, servicesData } from '../data/locationData';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 
 // ─── Reusable custom scrollable select ───────────────────────────────────────
 const CustomSelect = ({ label, options, selected, onSelect, disabled = false, placeholder = "Select..." }) => {
@@ -16,27 +17,27 @@ const CustomSelect = ({ label, options, selected, onSelect, disabled = false, pl
 
   return (
     <div className="flex flex-col space-y-2 relative" ref={ref}>
-      {label && <label className="text-[#3b3598] text-sm font-black uppercase tracking-tight">{label}</label>}
+      {label && <label className="text-[10px] font-black text-primary uppercase tracking-[0.2em] ml-1">{label}</label>}
       <button
         type="button"
         disabled={disabled}
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full px-4 py-2.5 bg-white border border-[#b3b2e6] rounded-md text-sm text-gray-700 text-left flex justify-between items-center focus:ring-2 focus:ring-blue-400 shadow-sm transition-all ${
-          disabled ? 'opacity-50 cursor-not-allowed bg-gray-50' : 'cursor-pointer hover:border-blue-400'
+        className={`w-full px-5 py-3.5 bg-dark-bg border border-dark-border rounded-xl text-sm text-white text-left flex justify-between items-center focus:ring-2 focus:ring-primary/20 shadow-sm transition-all ${
+          disabled ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer hover:border-primary/40'
         }`}
       >
         <span className="truncate">{selected || placeholder}</span>
-        <ChevronDown size={14} className={`text-[#3b3598] flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown size={14} className={`text-primary flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && !disabled && (
-        <div className="absolute top-full left-0 w-full mt-1 bg-white border border-[#b3b2e6] rounded-md shadow-xl z-[100] max-h-56 overflow-y-auto animate-in fade-in slide-in-from-top-1 duration-200">
+        <div className="absolute top-full left-0 w-full mt-2 bg-dark-card border border-dark-border rounded-xl shadow-2xl z-[100] max-h-56 overflow-y-auto animate-in fade-in slide-in-from-top-1 duration-200 backdrop-blur-xl">
           {options.map((opt) => (
             <div
               key={opt}
               onClick={() => { onSelect(opt); setIsOpen(false); }}
-              className={`px-4 py-2.5 text-sm cursor-pointer flex justify-between items-center hover:bg-blue-50 transition-colors ${
-                selected === opt ? 'bg-blue-50 text-blue-700 font-bold' : 'text-gray-700'
+              className={`px-5 py-3 text-sm cursor-pointer flex justify-between items-center hover:bg-primary/10 transition-colors ${
+                selected === opt ? 'bg-primary/20 text-primary font-bold' : 'text-gray-300'
               }`}
             >
               <span className="truncate">{opt}</span>
@@ -52,18 +53,33 @@ const CustomSelect = ({ label, options, selected, onSelect, disabled = false, pl
 // ─── Page component ───────────────────────────────────────────────────────────
 const CCTRegistration = () => {
   const navigate = useNavigate();
+  const [serviceTypes, setServiceTypes] = useState([]);
+
+  useEffect(() => {
+    const fetchServices = async () => {
+      const { data, error } = await supabase.from('enterprise_metrics').select('title');
+      if (data && !error) {
+        // Use ONLY the titles from your inventory cards
+        const cardTitles = data.map(m => m.title);
+        setServiceTypes(cardTitles);
+        
+        // Set first title as default if available
+        if (cardTitles.length > 0) {
+          setForm(prev => ({ ...prev, serviceType: cardTitles[0] }));
+        }
+      }
+    };
+    fetchServices();
+  }, []);
 
   const [form, setForm] = useState({
     enterpriseName: '',
+    primaryContactName: '',
     designation: '',
     email: '',
     contactNo: '',
-    address: '',
-    plan: '',
-    circuitId: '',
-    billingAccountNo: '',
+    serviceType: ''
   });
-  const [selectedService, setSelectedService] = useState('ILL CCTs');
   const [selectedState, setSelectedState]     = useState('');
   const [selectedDistrict, setSelectedDistrict] = useState('');
   const [success, setSuccess] = useState(false);
@@ -84,24 +100,21 @@ const CCTRegistration = () => {
 
     const newEntry = {
       id: Date.now(),
+      serviceType: form.serviceType,
       // EB Contacts fields
       circle: selectedState || '—',
       baName: selectedDistrict || '—',
       name: form.enterpriseName,
+      primaryContactName: form.primaryContactName,
       mobile: form.contactNo,
       email: form.email,
       designation: form.designation || '—',
       // Extra fields
       companyName: form.enterpriseName,
       location: selectedDistrict ? `${selectedDistrict}, ${selectedState}` : selectedState || '—',
-      contactName: form.enterpriseName,
+      contactName: form.primaryContactName || form.enterpriseName,
       contactNo: form.contactNo,
       mailId: form.email,
-      address: form.address,
-      service: selectedService,
-      plan: form.plan,
-      circuitId: form.circuitId,
-      billingAccountNo: form.billingAccountNo,
       registeredAt: new Date().toLocaleString(),
       isNew: true,
     };
@@ -117,152 +130,126 @@ const CCTRegistration = () => {
   };
 
   return (
-    <div className="animate-in fade-in duration-500">
-      <div className="max-w-4xl mx-auto mt-4">
-        <h2 className="text-xl font-black text-[#3b3598] mb-8 border-b-2 border-purple-100 pb-2 inline-block uppercase tracking-tight">
-          CCT Registration
-        </h2>
-
-        {success && (
-          <div className="mb-6 p-4 rounded-xl flex items-center gap-3 bg-emerald-50 border border-emerald-200 text-emerald-800 shadow-sm animate-in fade-in duration-300">
-            <CheckCircle size={20} />
-            <span className="font-semibold">Registration successful! Redirecting to Customer Contacts…</span>
-          </div>
-        )}
-
-        <form className="space-y-6 pb-24" onSubmit={handleSubmit}>
-          <div className="grid grid-cols-2 gap-x-12 gap-y-6">
-
-            {/* Column 1 */}
-            <div className="space-y-6">
-              <div className="flex flex-col space-y-2">
-                <label className="text-[#3b3598] text-sm font-black uppercase tracking-tight">Enterprise Name</label>
-                <input
-                  type="text"
-                  required
-                  value={form.enterpriseName}
-                  onChange={handleChange('enterpriseName')}
-                  placeholder="Enter Customer name"
-                  className="w-full px-4 py-2.5 bg-white border border-[#b3b2e6] rounded-md text-sm text-gray-700 outline-none focus:ring-2 focus:ring-blue-400 transition-all shadow-sm"
-                />
-              </div>
-
-              <CustomSelect
-                label="Designation"
-                options={['SDE', 'JTO', 'AGM']}
-                selected={form.designation}
-                onSelect={(val) => setForm(prev => ({ ...prev, designation: val }))}
-                placeholder="Select Designation"
-              />
-
-              <div className="flex flex-col space-y-2">
-                <label className="text-[#3b3598] text-sm font-black uppercase tracking-tight">Email</label>
-                <input
-                  type="email"
-                  value={form.email}
-                  onChange={handleChange('email')}
-                  placeholder="Enter email"
-                  className="w-full px-4 py-2.5 bg-white border border-[#b3b2e6] rounded-md text-sm text-gray-700 outline-none focus:ring-2 focus:ring-blue-400 transition-all shadow-sm"
-                />
-              </div>
-
-              <CustomSelect
-                label="Service"
-                options={servicesData}
-                selected={selectedService}
-                onSelect={setSelectedService}
-              />
-
-              <div className="flex flex-col space-y-2">
-                <label className="text-[#3b3598] text-sm font-black uppercase tracking-tight">Plan</label>
-                <input
-                  type="text"
-                  value={form.plan}
-                  onChange={handleChange('plan')}
-                  placeholder="Enter plan Details"
-                  className="w-full px-4 py-2.5 bg-white border border-[#b3b2e6] rounded-md text-sm text-gray-700 outline-none focus:ring-2 focus:ring-blue-400 transition-all shadow-sm"
-                />
-              </div>
-            </div>
-
-            {/* Column 2 */}
-            <div className="space-y-6">
-              <div className="flex flex-col space-y-2">
-                <label className="text-[#3b3598] text-sm font-black uppercase tracking-tight">Contact No</label>
-                <input
-                  type="text"
-                  value={form.contactNo}
-                  onChange={handleChange('contactNo')}
-                  placeholder="Contact No"
-                  className="w-full px-4 py-2.5 bg-white border border-[#b3b2e6] rounded-md text-sm text-gray-700 outline-none focus:ring-2 focus:ring-blue-400 transition-all shadow-sm"
-                />
-              </div>
-
-              <div className="flex flex-col space-y-2">
-                <label className="text-[#3b3598] text-sm font-black uppercase tracking-tight">Customer Address</label>
-                <input
-                  type="text"
-                  value={form.address}
-                  onChange={handleChange('address')}
-                  placeholder="Enter Address"
-                  className="w-full px-4 py-2.5 bg-white border border-[#b3b2e6] rounded-md text-sm text-gray-700 outline-none focus:ring-2 focus:ring-blue-400 transition-all shadow-sm"
-                />
-              </div>
-
-              {/* State & District row */}
-              <div className="grid grid-cols-2 gap-4">
-                <CustomSelect
-                  label="State"
-                  options={Object.keys(statesData)}
-                  selected={selectedState}
-                  onSelect={handleStateChange}
-                  placeholder="Select State"
-                />
-                <CustomSelect
-                  label="District"
-                  options={districts}
-                  selected={selectedDistrict}
-                  onSelect={setSelectedDistrict}
-                  disabled={!selectedState}
-                  placeholder="Select District"
-                />
-              </div>
-
-              <div className="flex flex-col space-y-2">
-                <label className="text-[#3b3598] text-sm font-black uppercase tracking-tight">Circuit Id / Phone Number</label>
-                <input
-                  type="text"
-                  value={form.circuitId}
-                  onChange={handleChange('circuitId')}
-                  placeholder="Enter Circuit Id / Phone Number"
-                  className="w-full px-4 py-2.5 bg-white border border-[#b3b2e6] rounded-md text-sm text-gray-700 outline-none focus:ring-2 focus:ring-blue-400 transition-all shadow-sm"
-                />
-              </div>
-
-              <div className="flex flex-col space-y-2">
-                <label className="text-[#3b3598] text-sm font-black uppercase tracking-tight">Billing Account No</label>
-                <input
-                  type="text"
-                  value={form.billingAccountNo}
-                  onChange={handleChange('billingAccountNo')}
-                  placeholder="Enter Billing Account No"
-                  className="w-full px-4 py-2.5 bg-white border border-[#b3b2e6] rounded-md text-sm text-gray-700 outline-none focus:ring-2 focus:ring-blue-400 transition-all shadow-sm"
-                />
-              </div>
-            </div>
-
-          </div>
-
-          <div className="flex justify-center mt-12 pt-4">
-            <button
-              type="submit"
-              className="w-[500px] py-3 rounded text-white font-black shadow-xl bg-gradient-to-r from-[#1b1464] to-[#00d2ff] hover:opacity-90 transition-all active:scale-95 uppercase tracking-widest"
-            >
-              Register
-            </button>
-          </div>
-        </form>
+    <div className="p-8 space-y-8 animate-in fade-in duration-500 max-w-[1200px] mx-auto bg-dark-bg min-h-screen">
+      <div className="flex flex-col gap-2 mb-8">
+        <h1 className="text-3xl font-black text-white tracking-tight">CCT Registration</h1>
+        <p className="text-gray-400 font-medium">Register official Enterprise Business contacts for government and corporate circuits.</p>
       </div>
+
+      {success && (
+        <div className="mb-8 p-5 rounded-2xl flex items-center gap-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 shadow-2xl animate-in zoom-in duration-300">
+          <CheckCircle size={24} className="animate-bounce" />
+          <span className="font-bold">Registration successful! Updating EB directory…</span>
+        </div>
+      )}
+
+      <form className="space-y-8 bg-dark-card p-10 rounded-3xl border border-dark-border shadow-2xl relative overflow-hidden" onSubmit={handleSubmit}>
+        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 blur-[100px] rounded-full pointer-events-none"></div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8 relative z-10">
+
+          {/* Column 1 */}
+          <div className="space-y-8">
+            <div className="flex flex-col space-y-2.5">
+              <label className="text-[10px] font-black text-primary uppercase tracking-[0.2em] ml-1">Enterprise Name</label>
+              <input
+                type="text"
+                required
+                value={form.enterpriseName}
+                onChange={handleChange('enterpriseName')}
+                placeholder="Ex: Reliance Jio Infocomm"
+                className="w-full px-5 py-3.5 bg-dark-bg border border-dark-border rounded-xl text-sm text-white outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-gray-700"
+              />
+            </div>
+
+            <div className="flex flex-col space-y-2.5">
+              <label className="text-[10px] font-black text-primary uppercase tracking-[0.2em] ml-1">Primary Contact Name</label>
+              <input
+                type="text"
+                required
+                value={form.primaryContactName}
+                onChange={handleChange('primaryContactName')}
+                placeholder="Enter Primary Contact Name"
+                className="w-full px-5 py-3.5 bg-dark-bg border border-dark-border rounded-xl text-sm text-white outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-gray-700"
+              />
+            </div>
+
+            <div className="flex flex-col space-y-2.5">
+              <label className="text-[10px] font-black text-primary uppercase tracking-[0.2em] ml-1">Designation</label>
+              <input
+                type="text"
+                value={form.designation}
+                onChange={handleChange('designation')}
+                placeholder="Enter Designation"
+                className="w-full px-5 py-3.5 bg-dark-bg border border-dark-border rounded-xl text-sm text-white outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-gray-700"
+              />
+            </div>
+
+            <div className="flex flex-col space-y-2.5">
+              <label className="text-[10px] font-black text-primary uppercase tracking-[0.2em] ml-1">Email ID</label>
+              <input
+                type="email"
+                value={form.email}
+                onChange={handleChange('email')}
+                placeholder="contact@enterprise.com"
+                className="w-full px-5 py-3.5 bg-dark-bg border border-dark-border rounded-xl text-sm text-white outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-gray-700"
+              />
+            </div>
+          </div>
+
+          {/* Column 2 */}
+          <div className="space-y-8">
+            <div className="flex flex-col space-y-2.5">
+              <label className="text-[10px] font-black text-primary uppercase tracking-[0.2em] ml-1">Contact No</label>
+              <input
+                type="text"
+                value={form.contactNo}
+                onChange={handleChange('contactNo')}
+                placeholder="+91 XXXXX XXXXX"
+                className="w-full px-5 py-3.5 bg-dark-bg border border-dark-border rounded-xl text-sm text-white outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-gray-700"
+              />
+            </div>
+
+            <div className="flex flex-col space-y-2.5">
+              <CustomSelect
+                label="Service Type"
+                options={serviceTypes}
+                selected={form.serviceType}
+                onSelect={(val) => setForm({...form, serviceType: val})}
+                placeholder="Select Service Type"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-6">
+              <CustomSelect
+                label="State"
+                options={Object.keys(statesData)}
+                selected={selectedState}
+                onSelect={handleStateChange}
+                placeholder="Select State"
+              />
+              <CustomSelect
+                label="District"
+                options={districts}
+                selected={selectedDistrict}
+                onSelect={setSelectedDistrict}
+                disabled={!selectedState}
+                placeholder="Select District"
+              />
+            </div>
+          </div>
+
+        </div>
+
+        <div className="flex justify-center mt-12 pt-8 border-t border-dark-border/50">
+          <button
+            type="submit"
+            className="w-full md:w-96 py-4 rounded-2xl text-white font-black shadow-[0_0_30px_rgba(0,180,216,0.2)] bg-primary hover:shadow-[0_0_40px_rgba(0,180,216,0.4)] hover:scale-[1.02] transition-all active:scale-95 uppercase tracking-[0.2em] text-sm"
+          >
+            Register EB Contact
+          </button>
+        </div>
+      </form>
     </div>
   );
 };

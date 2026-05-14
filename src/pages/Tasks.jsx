@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 import { 
   ClipboardList, 
   CheckCircle2, 
@@ -20,6 +21,7 @@ const Tasks = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isWorker, setIsWorker] = useState(false);
   const [workerName, setWorkerName] = useState('');
+  const [workerList, setWorkerList] = useState([]);
   
   const [newTask, setNewTask] = useState({
     title: '',
@@ -47,6 +49,17 @@ const Tasks = () => {
 
     const savedTasks = JSON.parse(localStorage.getItem('bsnl_tasks') || '[]');
     setTasks(savedTasks);
+
+    const fetchWorkers = async () => {
+      const { data, error } = await supabase
+        .from('staff_salaries')
+        .select('name')
+        .eq('role', 'worker');
+      if (!error && data) {
+        setWorkerList(data);
+      }
+    };
+    fetchWorkers();
   }, [navigate]);
 
   const displayTasks = isAdmin 
@@ -271,16 +284,21 @@ const Tasks = () => {
                   />
                 </div>
 
-                <div className="flex flex-col space-y-2.5">
+                 <div className="flex flex-col space-y-2.5">
                   <label className="text-[10px] font-black text-primary uppercase tracking-[0.2em] ml-1">Assign To</label>
-                  <input
-                    type="text"
+                  <select
                     required
                     value={newTask.assignee}
                     onChange={(e) => setNewTask({...newTask, assignee: e.target.value})}
-                    placeholder="Ex: Akhil Neela"
-                    className="w-full px-5 py-4 bg-dark-bg border border-dark-border rounded-2xl text-sm text-white outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-gray-700"
-                  />
+                    className="w-full px-5 py-4 bg-dark-bg border border-dark-border rounded-2xl text-sm text-white outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer"
+                  >
+                    <option value="" className="bg-dark-card">Select Worker</option>
+                    {workerList.map((worker, idx) => (
+                      <option key={idx} value={worker.name} className="bg-dark-card">
+                        {worker.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="flex flex-col space-y-2.5">

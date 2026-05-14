@@ -9,6 +9,9 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
+import { useState, useEffect } from 'react';
+import { FileText } from 'lucide-react';
 
 const CategoryCard = ({ name, description, icon: Icon, route, colorClass }) => (
   <div 
@@ -43,7 +46,17 @@ const CategoryCard = ({ name, description, icon: Icon, route, colorClass }) => (
 );
 
 const Tariffs = () => {
-  const subcategories = [
+  const [dynamicCats, setDynamicCats] = useState([]);
+
+  useEffect(() => {
+    const fetchCats = async () => {
+      const { data } = await supabase.from('categories').select('*').eq('module', 'Tariffs');
+      if (data) setDynamicCats(data);
+    };
+    fetchCats();
+  }, []);
+
+  const hardcoded = [
     { 
       name: "SIP Trunk", 
       description: "Scalable voice solutions for enterprises with digital connectivity and unlimited concurrent calls.", 
@@ -86,6 +99,17 @@ const Tariffs = () => {
       route: "/tariffs/ftth",
       colorClass: "from-cyan-500 to-blue-400"
     }
+  ];
+
+  const subcategories = [
+    ...hardcoded,
+    ...dynamicCats.map(c => ({
+      name: c.name,
+      description: `View latest plans and documentation for ${c.name}.`,
+      icon: FileText,
+      route: `/module-documents/Tariffs/${c.name}`,
+      colorClass: "from-gray-700 to-gray-600"
+    }))
   ];
 
   return (

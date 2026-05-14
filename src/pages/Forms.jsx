@@ -7,6 +7,8 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
+import { useState, useEffect } from 'react';
 
 const FormCategoryCard = ({ name, description, icon: Icon, route, colorClass }) => (
   <div 
@@ -41,7 +43,17 @@ const FormCategoryCard = ({ name, description, icon: Icon, route, colorClass }) 
 );
 
 const Forms = () => {
-  const categories = [
+  const [dynamicCats, setDynamicCats] = useState([]);
+
+  useEffect(() => {
+    const fetchCats = async () => {
+      const { data } = await supabase.from('categories').select('*').eq('module', 'Forms');
+      if (data) setDynamicCats(data);
+    };
+    fetchCats();
+  }, []);
+
+  const hardcoded = [
     { 
       name: "ILL CAF", 
       description: "Application forms and Customer Acquisition Forms for Internet Leased Line connections.", 
@@ -70,6 +82,17 @@ const Forms = () => {
       route: "/forms/mobile",
       colorClass: "from-purple-500 to-indigo-400"
     }
+  ];
+
+  const categories = [
+    ...hardcoded,
+    ...dynamicCats.map(c => ({
+      name: c.name,
+      description: `Application forms and documentation for ${c.name} services.`,
+      icon: FileText,
+      route: `/module-documents/Forms/${c.name}`,
+      colorClass: "from-gray-700 to-gray-600"
+    }))
   ];
 
   return (

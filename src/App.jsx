@@ -13,7 +13,6 @@ import Inbox from './pages/Inbox';
 import Search from './pages/Search';
 import ShortCode from './pages/ShortCode';
 import Tariffs from './pages/Tariffs';
-import BulkCCTs from './pages/BulkCCTs';
 import CCTRegistration from './pages/CCTRegistration';
 import LeasedLines from './pages/LeasedLines';
 import ILL576Users from './pages/ILL576Users';
@@ -22,6 +21,7 @@ import Login from './pages/Login';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 import CategoryPdfs from './pages/CategoryPdfs';
+import ServiceUsers from './pages/ServiceUsers';
 import Tasks from './pages/Tasks';
 import WorkerLogin from './pages/WorkerLogin';
 
@@ -47,21 +47,20 @@ function App() {
           <Route path="customers/enterprise" element={<Customers />} />
           <Route path="customers/retail" element={<Customers />} />
           <Route path="custRegistration" element={<CustomerRegistration />} />
-          <Route path="leased-lines/bulk-ccts" element={<BulkCCTs />} />
           <Route path="leased-lines/registration" element={<CCTRegistration />} />
-          <Route path="leased-lines/ill-576" element={<ILL576Users />} />
+          <Route path="leased-lines/users/:serviceType" element={<ServiceUsers />} />
           <Route path="tariffs" element={<Tariffs />} />
-          <Route path="tariffs/sip-trunk" element={<PdfViewer title="SIP Trunk Tariff" />} />
-          <Route path="tariffs/internet-leased-line" element={<PdfViewer title="Internet Leased Line Tariff" />} />
-          <Route path="tariffs/mobile-prepaid" element={<PdfViewer title="Mobile Prepaid Tariff" />} />
-          <Route path="tariffs/mobile-postpaid" element={<PdfViewer title="Mobile Postpaid Tariff" />} />
-          <Route path="tariffs/mmvc-obd" element={<PdfViewer title="MMVC OBD Tariff" />} />
-          <Route path="tariffs/ftth" element={<PdfViewer title="FTTH Tariff" />} />
+          <Route path="tariffs/sip-trunk" element={<PdfViewer module="Tariffs" category="SIP Trunk" title="SIP Trunk Tariff" />} />
+          <Route path="tariffs/internet-leased-line" element={<PdfViewer module="Tariffs" category="Internet leased line" title="Internet Leased Line Tariff" />} />
+          <Route path="tariffs/mobile-prepaid" element={<PdfViewer module="Tariffs" category="Mobile Prepaid" title="Mobile Prepaid Tariff" />} />
+          <Route path="tariffs/mobile-postpaid" element={<PdfViewer module="Tariffs" category="Mobile Postpaid" title="Mobile Postpaid Tariff" />} />
+          <Route path="tariffs/mmvc-obd" element={<PdfViewer module="Tariffs" category="MMVC OBD" title="MMVC OBD Tariff" />} />
+          <Route path="tariffs/ftth" element={<PdfViewer module="Tariffs" category="FTTH" title="FTTH Tariff" />} />
           <Route path="forms" element={<Forms />} />
-          <Route path="forms/ill-caf" element={<PdfViewer title="ILL CAF Form" />} />
-          <Route path="forms/sip-trunk" element={<PdfViewer title="SIP Trunk CAF Form" />} />
-          <Route path="forms/ftth-caf" element={<PdfViewer title="FTTH CAF Form" />} />
-          <Route path="forms/mobile" element={<PdfViewer title="Mobile CAF Form" />} />
+          <Route path="forms/ill-caf" element={<PdfViewer module="Forms" category="ILL CAF" title="ILL CAF Form" />} />
+          <Route path="forms/sip-trunk" element={<PdfViewer module="Forms" category="SIP Trunk" title="SIP Trunk CAF Form" />} />
+          <Route path="forms/ftth-caf" element={<PdfViewer module="Forms" category="FTTH CAF" title="FTTH CAF Form" />} />
+          <Route path="forms/mobile" element={<PdfViewer module="Forms" category="Mobile" title="Mobile CAF Form" />} />
           <Route path="charts" element={<Charts />} />
           <Route path="search" element={<Search />} />
           <Route path="documents/:docTitle" element={<PdfViewerWithParam />} />

@@ -51,7 +51,8 @@ const columns = [
   { header: 'id',          key: 'id' },
   { header: 'Circle',      key: 'circle' },
   { header: 'Designation', key: 'designation' },
-  { header: 'Name',        key: 'name' },
+  { header: 'Enterprise Name', key: 'name' },
+  { header: 'Primary Contact', key: 'primaryContactName' },
   { header: 'Mobile',      key: 'mobile' },
   { header: 'mail id',     key: 'email' },
   { header: 'BA Name',     key: 'baName' },
@@ -95,6 +96,14 @@ const Contacts = () => {
   const handleStateChange = (state) => {
     setSelectedState(state);
     setSelectedDistrict('');
+  };
+
+  const handleDelete = (id) => {
+    const existing = JSON.parse(localStorage.getItem('cctRegistrations') || '[]');
+    const updated = existing.filter(item => (item.id || item.index) !== id);
+    localStorage.setItem('cctRegistrations', JSON.stringify(updated));
+    const all = loadAllData();
+    setFilteredData(applyFilter(all, selectedState, selectedDistrict));
   };
 
   const handleSubmit = (e) => {
@@ -179,14 +188,23 @@ const Contacts = () => {
                         </td>
                       ))}
                       <td className="px-6 py-4 text-center">
-                        <button 
-                          onClick={() => toggleRow(rowId)} 
-                          className={`p-2 rounded-xl transition-all flex items-center justify-center mx-auto ${
-                            expandedRows[rowId] ? 'bg-primary text-white shadow-[0_0_15px_rgba(0,180,216,0.3)]' : 'text-primary hover:bg-primary/10'
-                          }`}
-                        >
-                          {expandedRows[rowId] ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
-                        </button>
+                        <div className="flex items-center justify-center gap-2">
+                          <button 
+                            onClick={() => toggleRow(rowId)} 
+                            className={`p-2 rounded-xl transition-all flex items-center justify-center ${
+                              expandedRows[rowId] ? 'bg-primary text-white shadow-[0_0_15px_rgba(0,180,216,0.3)]' : 'text-primary hover:bg-primary/10'
+                            }`}
+                          >
+                            {expandedRows[rowId] ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+                          </button>
+                          <button 
+                            onClick={() => handleDelete(rowId)}
+                            className="p-2 text-rose-500 hover:bg-rose-500/10 rounded-xl transition-all"
+                            title="Delete Contact"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                     {expandedRows[rowId] && (
@@ -200,21 +218,7 @@ const Contacts = () => {
                               <h4 className="font-black text-white text-lg tracking-tight">Full Registration Details</h4>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 bg-dark-card p-6 rounded-2xl border border-dark-border shadow-inner">
-                              {[
-                                { label: 'Service Type', value: row.service },
-                                { label: 'Plan', value: row.plan },
-                                { label: 'Circuit ID / Phone', value: row.circuitId },
-                                { label: 'Billing Account No', value: row.billingAccountNo },
-                              ].map((item, idx) => (
-                                <div key={idx}>
-                                  <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">{item.label}</p>
-                                  <p className="text-sm font-bold text-gray-200">{item.value || 'N/A'}</p>
-                                </div>
-                              ))}
-                              <div className="md:col-span-2 lg:col-span-3 pt-4 mt-2 border-t border-dark-border/50">
-                                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">Customer Address</p>
-                                <p className="text-sm font-bold text-gray-200">{row.address || 'N/A'}</p>
-                              </div>
+
                               {row.registeredAt && (
                                 <div className="md:col-span-3 lg:col-span-4 pt-6 mt-4 border-t border-dark-border/50 flex items-center gap-3">
                                   <div className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_10px_rgba(0,180,216,0.8)]"></div>

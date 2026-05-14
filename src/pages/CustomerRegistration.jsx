@@ -1,11 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import CustomSelect from '../components/CustomSelect';
 import { statesData, servicesData } from '../data/locationData';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 const CustomerRegistration = () => {
   const navigate = useNavigate();
+  const [serviceTypes, setServiceTypes] = useState([]);
+
+  useEffect(() => {
+    const fetchServices = async () => {
+      const { data, error } = await supabase.from('enterprise_metrics').select('title');
+      if (data && !error) {
+        const cardTitles = data.map(m => m.title);
+        setServiceTypes(cardTitles);
+        if (cardTitles.length > 0) {
+          setSelectedService(cardTitles[0]);
+        }
+      }
+    };
+    fetchServices();
+  }, []);
+
   const [form, setForm] = useState({
     enterpriseName: '',
     designation: '',
@@ -20,7 +37,7 @@ const CustomerRegistration = () => {
 
   const [selectedState, setSelectedState]       = useState('');
   const [selectedDistrict, setSelectedDistrict] = useState('');
-  const [selectedService, setSelectedService]   = useState('ILL CCTs');
+  const [selectedService, setSelectedService]   = useState('Internet Leased Line (ILL)');
   const [success, setSuccess]                   = useState(false);
 
   const handleStateChange = (state) => {
@@ -126,18 +143,18 @@ const CustomerRegistration = () => {
               />
             </div>
 
-            <div className="flex flex-col space-y-2.5">
-              <label className="text-[10px] font-black text-primary uppercase tracking-[0.2em] ml-1">Service Category</label>
-              <select 
-                value={selectedService}
-                onChange={(e) => setSelectedService(e.target.value)}
-                className="w-full px-5 py-3.5 bg-dark-bg border border-dark-border rounded-xl text-sm text-white outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer"
-              >
-                {servicesData.map(opt => (
-                  <option key={opt} value={opt} className="bg-dark-card">{opt}</option>
-                ))}
-              </select>
-            </div>
+              <div className="flex flex-col space-y-2.5">
+                <label className="text-[10px] font-black text-primary uppercase tracking-[0.2em] ml-1">Service Category</label>
+                <select 
+                  value={selectedService}
+                  onChange={(e) => setSelectedService(e.target.value)}
+                  className="w-full px-5 py-3.5 bg-dark-bg border border-dark-border rounded-xl text-sm text-white outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer"
+                >
+                  {serviceTypes.map(opt => (
+                    <option key={opt} value={opt} className="bg-dark-card">{opt}</option>
+                  ))}
+                </select>
+              </div>
 
             <div className="flex flex-col space-y-2.5">
               <label className="text-[10px] font-black text-primary uppercase tracking-[0.2em] ml-1">Plan Specification</label>

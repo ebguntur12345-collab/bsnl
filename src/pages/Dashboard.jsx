@@ -12,31 +12,113 @@ import {
   RefreshCw,
   Loader2,
   HelpCircle,
-  DollarSign
+  DollarSign,
+  Phone,
+  CheckCircle,
+  Monitor
 } from 'lucide-react';
 
-const DashboardStatCard = ({ title, value, icon: Icon, iconColor, footerText, isDashed = false }) => (
-  <div className="bg-dark-card rounded-2xl p-6 border border-dark-border card-hover group relative overflow-hidden">
-    <div className="flex items-center justify-between mb-4">
-      <div className={`w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center ${isDashed ? 'border-dashed border-primary/40' : 'border-dark-border shadow-sm'}`}>
-        <Icon size={24} className={iconColor} />
+import { Link } from 'react-router-dom';
+
+const DashboardStatCard = ({ title, subtitle, value, service_type, icon: Icon, colorClass = "text-primary" }) => (
+  <Link 
+    to={`/leased-lines/users/${encodeURIComponent(service_type || title)}`}
+    className="bg-dark-card rounded-xl p-3.5 border border-dark-border card-hover group relative overflow-hidden flex flex-col justify-between min-h-[90px] block transition-all"
+  >
+    <div className="flex items-start justify-between gap-2">
+      <div className="flex flex-col min-w-0">
+        <p className="text-[7px] font-black text-gray-600 uppercase tracking-widest mb-0.5 truncate">{subtitle || 'Live'}</p>
+        <h4 className="text-[10px] font-black text-white uppercase tracking-tight truncate">{title}</h4>
       </div>
-      <div className="text-right">
-        <p className="text-gray-500 font-black text-[10px] uppercase tracking-widest mb-1">{title}</p>
-        <p className="text-xl font-black text-white tracking-tight">{value}</p>
+      <div className={`p-1.5 rounded-lg bg-primary/5 flex items-center justify-center border border-white/5 flex-shrink-0`}>
+        <Icon size={12} className={colorClass} />
       </div>
     </div>
-    <div className="pt-3 border-t border-dark-border/50 flex items-center gap-2">
-      <RefreshCw size={12} className="text-primary animate-spin-slow" />
-      <span className="text-[10px] font-bold text-primary cursor-pointer hover:text-white transition-colors">{footerText}</span>
+    
+    <div className="mt-2 flex items-baseline justify-between">
+      <div className="flex flex-col">
+        <p className="text-base font-black text-white tracking-tighter leading-none">{value}</p>
+        <p className="text-[6px] font-black text-primary uppercase tracking-widest mt-1 opacity-0 group-hover:opacity-100 transition-opacity">View Details</p>
+      </div>
+      <div className="w-1 h-1 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_5px_rgba(16,185,129,0.5)]"></div>
     </div>
-  </div>
+  </Link>
 );
 
 const Dashboard = () => {
   const [taskStats, setTaskStats] = useState({ total: 0, completed: 0, rate: 0, recentTasks: [] });
+  const [metrics, setMetrics] = useState([]);
+
+  const iconMap = { Zap, RefreshCw, Phone, Users, ShoppingCart, Monitor, CreditCard, HelpCircle, DollarSign, CheckCircle };
 
   useEffect(() => {
+    // Fetch Metrics
+    const fetchMetrics = async () => {
+      const { data, error } = await supabase.from('enterprise_metrics').select('*').order('created_at', { ascending: true });
+      
+      // Load actual counts from registrations
+      const regs = JSON.parse(localStorage.getItem('cctRegistrations') || '[]');
+      
+      const processMetricValue = (m) => {
+        if (!m.service_type || m.service_type === 'None') return m.value || '0';
+        const count = regs.filter(r => {
+          const rService = (r.serviceType || r.service || '').toLowerCase();
+          const mService = (m.service_type || '').toLowerCase();
+          const mTitle = (m.title || '').toLowerCase();
+          if (!mService || mService === 'none') {
+            // If no service type, match exactly against title
+            return rService === mTitle;
+          }
+          
+          return rService === mService || 
+                 rService === mTitle ||
+                 (rService.includes('ill') && mService.includes('ill')) ||
+                 (rService.includes('mpls') && mService.includes('mpls')) ||
+                 (rService.includes('sip') && mService.includes('sip')) ||
+                 (rService.includes('pri') && mService.includes('pri')) ||
+                 (rService.includes('ftth') && mService.includes('ftth')) ||
+                 (rService.includes('mmvc') && mService.includes('mmvc'));
+        }).length;
+        // Use the title prefix + count (e.g., "ILL 576")
+        const prefix = m.title.split(' ')[0] || '';
+        return `${prefix} ${count}`;
+      };
+
+      if (data && data.length > 0) {
+        setMetrics(data.map(m => ({
+          ...m,
+          value: processMetricValue(m),
+          icon: iconMap[m.icon_name] || HelpCircle
+        })));
+      } else {
+        // Fallback to defaults with dynamic counts
+        const defaults = [
+          { title: "ILL CCTs", subtitle: "ILL 576", service_type: "Internet Leased Line (ILL)", icon: Zap },
+          { title: "MPLS CCTs", subtitle: "MPLS 250", service_type: "MPLS", icon: RefreshCw },
+          { title: "ISDN PRI", subtitle: "PRI 97", service_type: "ISDN PRI", icon: Phone },
+          { title: "SIP TRUNKS", subtitle: "SIP 33", service_type: "SIP Trunk", icon: Phone },
+          { title: "MMVC", subtitle: "MMVC", service_type: "MMVC", icon: CreditCard },
+          { title: "NMECT CCTs", subtitle: "NMECT CCTs", service_type: "None", value: "33", icon: ShoppingCart },
+          { title: "DOJ", subtitle: "DOJ", service_type: "Internet Leased Line (ILL)", icon: Users },
+          { title: "CG6B", subtitle: "CG6B", service_type: "MPLS", icon: Users },
+          { title: "Election Comission", subtitle: "Election Comission", service_type: "Toll Free", icon: CheckCircle },
+          { title: "Tobacco Board", subtitle: "Tobacco Board", service_type: "Internet Leased Line (ILL)", icon: Zap },
+          { title: "NREGS", subtitle: "NREGS", service_type: "FTTH", icon: RefreshCw },
+          { title: "Collectorates", subtitle: "Collectorates", service_type: "Internet Leased Line (ILL)", icon: Users },
+          { title: "NHM", subtitle: "NHM", service_type: "FTTH", icon: Users },
+          { title: "Toll Free", subtitle: "Toll Free", service_type: "Toll Free", icon: Phone },
+        ];
+
+        setMetrics(defaults.map(m => ({
+          ...m,
+          value: m.value || processMetricValue(m),
+          icon: m.icon
+        })));
+      }
+    };
+    fetchMetrics();
+
+    // Fetch Tasks
     const tasks = JSON.parse(localStorage.getItem('bsnl_tasks') || '[]');
     const total = tasks.length;
     const completed = tasks.filter(t => t.status === 'completed').length;
@@ -46,24 +128,23 @@ const Dashboard = () => {
       completed, 
       rate, 
       pending: total - completed,
-      recentTasks: tasks.slice(0, 5) // Show last 5 tasks
+      recentTasks: tasks.slice(0, 5)
     });
   }, []);
 
   return (
-    <div className="p-8 space-y-10 animate-in fade-in duration-700 max-w-[1600px] mx-auto min-h-screen">
+    <div className="p-8 space-y-6 animate-in fade-in duration-700 max-w-[1600px] mx-auto min-h-screen">
       {/* Header */}
-      <div className="flex flex-col gap-2">
-        <h1 className="text-4xl font-black text-white tracking-tight">Enterprise Overview</h1>
-        <p className="text-gray-400 font-medium text-lg">Monitoring real-time service provisioning and project status across Guntur SSA.</p>
+      <div className="flex flex-col gap-0.5">
+        <h1 className="text-2xl font-black text-white tracking-tight">Enterprise Overview</h1>
+        <p className="text-gray-600 font-bold text-[10px] uppercase tracking-widest">Real-time Project Analytics • Guntur SSA</p>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-        <DashboardStatCard title="NREGS" value="576 FTTH" icon={ShoppingCart} iconColor="text-primary" footerText="NREGS Details" />
-        <DashboardStatCard title="CGGB" value="MPLS 250" icon={HelpCircle} iconColor="text-primary" footerText="Updated Now" isDashed={true} />
-        <DashboardStatCard title="DOJ" value="MPLS 188" icon={DollarSign} iconColor="text-primary" footerText="Updated Now" />
-        <DashboardStatCard title="Tobacco Board" value="33 ILLs" icon={Users} iconColor="text-primary" footerText="Updated Now" />
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-3">
+        {metrics.map((m, i) => (
+          <DashboardStatCard key={i} {...m} />
+        ))}
       </div>
 
       {/* Placeholder for future enterprise metrics */}
