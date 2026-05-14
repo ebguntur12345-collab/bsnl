@@ -15,6 +15,7 @@ const CustomerRegistration = () => {
     plan: '',
     circuitId: '',
     billingAccountNo: '',
+    dateOfCommission: '',
   });
 
   const [selectedState, setSelectedState]       = useState('');
@@ -36,14 +37,12 @@ const CustomerRegistration = () => {
 
     const newEntry = {
       id: Date.now(),
-      // EB Contacts fields
       circle: selectedState || '—',
       baName: selectedDistrict || '—',
       name: form.enterpriseName,
       mobile: form.contactNo,
       email: form.email,
       designation: form.designation || '—',
-      // Extra fields
       companyName: form.enterpriseName,
       location: selectedDistrict ? `${selectedDistrict}, ${selectedState}` : selectedState || '—',
       contactName: form.enterpriseName,
@@ -54,6 +53,7 @@ const CustomerRegistration = () => {
       plan: form.plan,
       circuitId: form.circuitId,
       billingAccountNo: form.billingAccountNo,
+      dateOfCommission: form.dateOfCommission,
       registeredAt: new Date().toLocaleString(),
       isNew: true,
     };
@@ -68,153 +68,188 @@ const CustomerRegistration = () => {
   };
 
   return (
-    <div className="animate-in fade-in duration-500">
-      <div className="max-w-4xl mx-auto mt-6">
-        <h2 className="text-xl font-black text-[#3b3598] mb-8 border-b-2 border-purple-100 pb-2 inline-block uppercase tracking-tight">
-          Customer Registration
-        </h2>
-
-        {success && (
-          <div className="mb-6 p-4 rounded-xl flex items-center gap-3 bg-emerald-50 border border-emerald-200 text-emerald-800 shadow-sm animate-in fade-in duration-300">
-            <CheckCircle size={20} />
-            <span className="font-semibold">Registration successful! Redirecting to Customer Contacts…</span>
-          </div>
-        )}
-
-        <form className="space-y-6 pb-24" onSubmit={handleSubmit}>
-          <div className="grid grid-cols-2 gap-x-12 gap-y-6">
-
-            {/* ── Column 1 ── */}
-            <div className="space-y-6">
-              <div className="flex flex-col space-y-2">
-                <label className="text-[#3b3598] text-xs font-black uppercase tracking-tight">Enterprise Name</label>
-                <input
-                  type="text"
-                  required
-                  value={form.enterpriseName}
-                  onChange={handleChange('enterpriseName')}
-                  placeholder="Enter Customer name"
-                  className="w-full px-4 py-2.5 bg-white border border-[#b3b2e6] rounded text-sm text-gray-700 outline-none focus:ring-2 focus:ring-blue-400 shadow-sm"
-                />
-              </div>
-
-              <CustomSelect
-                label="Designation"
-                options={['SDE', 'JTO', 'AGM']}
-                selected={form.designation}
-                onSelect={(val) => setForm(prev => ({ ...prev, designation: val }))}
-                placeholder="Select Designation"
-              />
-
-              <div className="flex flex-col space-y-2">
-                <label className="text-[#3b3598] text-xs font-black uppercase tracking-tight">Email</label>
-                <input
-                  type="email"
-                  value={form.email}
-                  onChange={handleChange('email')}
-                  placeholder="Enter email"
-                  className="w-full px-4 py-2.5 bg-white border border-[#b3b2e6] rounded text-sm text-gray-700 outline-none focus:ring-2 focus:ring-blue-400 shadow-sm"
-                />
-              </div>
-
-              <CustomSelect
-                label="Service"
-                options={servicesData}
-                selected={selectedService}
-                onSelect={setSelectedService}
-                placeholder="Select Service"
-              />
-
-              <div className="flex flex-col space-y-2">
-                <label className="text-[#3b3598] text-xs font-black uppercase tracking-tight">Plan</label>
-                <input
-                  type="text"
-                  value={form.plan}
-                  onChange={handleChange('plan')}
-                  placeholder="Enter plan Details"
-                  className="w-full px-4 py-2.5 bg-white border border-[#b3b2e6] rounded text-sm text-gray-700 outline-none focus:ring-2 focus:ring-blue-400 shadow-sm"
-                />
-              </div>
-            </div>
-
-            {/* ── Column 2 ── */}
-            <div className="space-y-6">
-              <div className="flex flex-col space-y-2">
-                <label className="text-[#3b3598] text-xs font-black uppercase tracking-tight">Contact No</label>
-                <input
-                  type="text"
-                  value={form.contactNo}
-                  onChange={handleChange('contactNo')}
-                  placeholder="Contact No"
-                  className="w-full px-4 py-2.5 bg-white border border-[#b3b2e6] rounded text-sm text-gray-700 outline-none focus:ring-2 focus:ring-blue-400 shadow-sm"
-                />
-              </div>
-
-              <div className="flex flex-col space-y-2">
-                <label className="text-[#3b3598] text-xs font-black uppercase tracking-tight">Customer Address</label>
-                <input
-                  type="text"
-                  value={form.address}
-                  onChange={handleChange('address')}
-                  placeholder="Enter Address"
-                  className="w-full px-4 py-2.5 bg-white border border-[#b3b2e6] rounded text-sm text-gray-700 outline-none focus:ring-2 focus:ring-blue-400 shadow-sm"
-                />
-              </div>
-
-              {/* State + District side-by-side */}
-              <div className="grid grid-cols-2 gap-4">
-                <CustomSelect
-                  label="State"
-                  options={Object.keys(statesData)}
-                  selected={selectedState}
-                  onSelect={handleStateChange}
-                  placeholder="Select State"
-                />
-                <CustomSelect
-                  label="District"
-                  options={selectedState ? statesData[selectedState] : []}
-                  selected={selectedDistrict}
-                  onSelect={setSelectedDistrict}
-                  disabled={!selectedState}
-                  placeholder="Select District"
-                />
-              </div>
-
-              <div className="flex flex-col space-y-2">
-                <label className="text-[#3b3598] text-xs font-black uppercase tracking-tight">Circuit Id / Phone Number</label>
-                <input
-                  type="text"
-                  value={form.circuitId}
-                  onChange={handleChange('circuitId')}
-                  placeholder="Enter Circuit Id / Phone Number"
-                  className="w-full px-4 py-2.5 bg-white border border-[#b3b2e6] rounded text-sm text-gray-700 outline-none focus:ring-2 focus:ring-blue-400 shadow-sm"
-                />
-              </div>
-
-              <div className="flex flex-col space-y-2">
-                <label className="text-[#3b3598] text-xs font-black uppercase tracking-tight">Billing Account No</label>
-                <input
-                  type="text"
-                  value={form.billingAccountNo}
-                  onChange={handleChange('billingAccountNo')}
-                  placeholder="Enter Billing Account No"
-                  className="w-full px-4 py-2.5 bg-white border border-[#b3b2e6] rounded text-sm text-gray-700 outline-none focus:ring-2 focus:ring-blue-400 shadow-sm"
-                />
-              </div>
-            </div>
-
-          </div>
-
-          <div className="flex justify-center mt-12 pt-6">
-            <button
-              type="submit"
-              className="w-96 py-3 rounded text-white font-black shadow-xl bg-gradient-to-r from-[#1b1464] via-[#005bc4] to-[#00d2ff] hover:opacity-90 transition-all active:scale-95 uppercase tracking-widest"
-            >
-              Register
-            </button>
-          </div>
-        </form>
+    <div className="p-8 space-y-8 animate-in fade-in duration-500 max-w-[1200px] mx-auto bg-dark-bg min-h-screen">
+      <div className="flex flex-col gap-2 mb-8">
+        <h1 className="text-3xl font-black text-white tracking-tight">Customer Registration</h1>
+        <p className="text-gray-400 font-medium">Provision new enterprise services and register customer details.</p>
       </div>
+
+      {success && (
+        <div className="mb-8 p-5 rounded-2xl flex items-center gap-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 shadow-2xl animate-in zoom-in duration-300">
+          <CheckCircle size={24} className="animate-bounce" />
+          <span className="font-bold">Registration successful! Redirecting to database…</span>
+        </div>
+      )}
+
+      <form className="space-y-8 bg-dark-card p-10 rounded-3xl border border-dark-border shadow-2xl relative overflow-hidden" onSubmit={handleSubmit}>
+        {/* Decorative Background Blur */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 blur-[100px] rounded-full pointer-events-none"></div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8 relative z-10">
+
+          {/* ── Column 1: Basic Info ── */}
+          <div className="space-y-8">
+            <div className="flex flex-col space-y-2.5">
+              <label className="text-[10px] font-black text-primary uppercase tracking-[0.2em] ml-1">Enterprise Name</label>
+              <input
+                type="text"
+                required
+                value={form.enterpriseName}
+                onChange={handleChange('enterpriseName')}
+                placeholder="Ex: Reliance Jio Infocomm"
+                className="w-full px-5 py-3.5 bg-dark-bg border border-dark-border rounded-xl text-sm text-white outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-gray-700"
+              />
+            </div>
+
+            <div className="flex flex-col space-y-2.5">
+              <label className="text-[10px] font-black text-primary uppercase tracking-[0.2em] ml-1">Designation</label>
+              <select 
+                value={form.designation}
+                onChange={handleChange('designation')}
+                className="w-full px-5 py-3.5 bg-dark-bg border border-dark-border rounded-xl text-sm text-white outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer"
+              >
+                <option value="" className="bg-dark-card">Select Designation</option>
+                {['SDE', 'JTO', 'AGM', 'Customer Care', 'IT Manager'].map(opt => (
+                  <option key={opt} value={opt} className="bg-dark-card">{opt}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex flex-col space-y-2.5">
+              <label className="text-[10px] font-black text-primary uppercase tracking-[0.2em] ml-1">Email ID</label>
+              <input
+                type="email"
+                value={form.email}
+                onChange={handleChange('email')}
+                placeholder="contact@enterprise.com"
+                className="w-full px-5 py-3.5 bg-dark-bg border border-dark-border rounded-xl text-sm text-white outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-gray-700"
+              />
+            </div>
+
+            <div className="flex flex-col space-y-2.5">
+              <label className="text-[10px] font-black text-primary uppercase tracking-[0.2em] ml-1">Service Category</label>
+              <select 
+                value={selectedService}
+                onChange={(e) => setSelectedService(e.target.value)}
+                className="w-full px-5 py-3.5 bg-dark-bg border border-dark-border rounded-xl text-sm text-white outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer"
+              >
+                {servicesData.map(opt => (
+                  <option key={opt} value={opt} className="bg-dark-card">{opt}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex flex-col space-y-2.5">
+              <label className="text-[10px] font-black text-primary uppercase tracking-[0.2em] ml-1">Plan Specification</label>
+              <input
+                type="text"
+                value={form.plan}
+                onChange={handleChange('plan')}
+                placeholder="Ex: 100Mbps Symmetric ILL"
+                className="w-full px-5 py-3.5 bg-dark-bg border border-dark-border rounded-xl text-sm text-white outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-gray-700"
+              />
+            </div>
+
+            <div className="flex flex-col space-y-2.5">
+              <label className="text-[10px] font-black text-primary uppercase tracking-[0.2em] ml-1">Date of Commission</label>
+              <input
+                type="date"
+                required
+                value={form.dateOfCommission}
+                onChange={handleChange('dateOfCommission')}
+                className="w-full px-5 py-3.5 bg-dark-bg border border-dark-border rounded-xl text-sm text-white outline-none focus:ring-2 focus:ring-primary/20 transition-all [color-scheme:dark]"
+              />
+            </div>
+          </div>
+
+          {/* ── Column 2: Technical Info ── */}
+          <div className="space-y-8">
+            <div className="flex flex-col space-y-2.5">
+              <label className="text-[10px] font-black text-primary uppercase tracking-[0.2em] ml-1">Primary Contact No</label>
+              <input
+                type="text"
+                value={form.contactNo}
+                onChange={handleChange('contactNo')}
+                placeholder="+91 XXXXX XXXXX"
+                className="w-full px-5 py-3.5 bg-dark-bg border border-dark-border rounded-xl text-sm text-white outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-gray-700"
+              />
+            </div>
+
+            <div className="flex flex-col space-y-2.5">
+              <label className="text-[10px] font-black text-primary uppercase tracking-[0.2em] ml-1">Installation Address</label>
+              <input
+                type="text"
+                value={form.address}
+                onChange={handleChange('address')}
+                placeholder="Full site address"
+                className="w-full px-5 py-3.5 bg-dark-bg border border-dark-border rounded-xl text-sm text-white outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-gray-700"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-6">
+              <div className="flex flex-col space-y-2.5">
+                <label className="text-[10px] font-black text-primary uppercase tracking-[0.2em] ml-1">State</label>
+                <select 
+                  value={selectedState}
+                  onChange={(e) => handleStateChange(e.target.value)}
+                  className="w-full px-5 py-3.5 bg-dark-bg border border-dark-border rounded-xl text-sm text-white outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer"
+                >
+                  <option value="" className="bg-dark-card">Select State</option>
+                  {Object.keys(statesData).map(opt => (
+                    <option key={opt} value={opt} className="bg-dark-card">{opt}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col space-y-2.5">
+                <label className="text-[10px] font-black text-primary uppercase tracking-[0.2em] ml-1">BA Name (District)</label>
+                <select 
+                  value={selectedDistrict}
+                  onChange={(e) => setSelectedDistrict(e.target.value)}
+                  disabled={!selectedState}
+                  className="w-full px-5 py-3.5 bg-dark-bg border border-dark-border rounded-xl text-sm text-white outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <option value="" className="bg-dark-card">Select BA</option>
+                  {(selectedState ? statesData[selectedState] : []).map(opt => (
+                    <option key={opt} value={opt} className="bg-dark-card">{opt}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="flex flex-col space-y-2.5">
+              <label className="text-[10px] font-black text-primary uppercase tracking-[0.2em] ml-1">Circuit ID / Phone Number</label>
+              <input
+                type="text"
+                value={form.circuitId}
+                onChange={handleChange('circuitId')}
+                placeholder="Ex: BSNL-ILL-576-GNT"
+                className="w-full px-5 py-3.5 bg-dark-bg border border-dark-border rounded-xl text-sm text-white outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-gray-700"
+              />
+            </div>
+
+            <div className="flex flex-col space-y-2.5">
+              <label className="text-[10px] font-black text-primary uppercase tracking-[0.2em] ml-1">Billing Account No</label>
+              <input
+                type="text"
+                value={form.billingAccountNo}
+                onChange={handleChange('billingAccountNo')}
+                placeholder="Ex: 8000123456"
+                className="w-full px-5 py-3.5 bg-dark-bg border border-dark-border rounded-xl text-sm text-white outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-gray-700"
+              />
+            </div>
+          </div>
+
+        </div>
+
+        <div className="flex justify-center mt-12 pt-8 border-t border-dark-border/50">
+          <button
+            type="submit"
+            className="w-full md:w-96 py-4 rounded-2xl text-white font-black shadow-[0_0_30px_rgba(0,180,216,0.2)] bg-primary hover:shadow-[0_0_40px_rgba(0,180,216,0.4)] hover:scale-[1.02] transition-all active:scale-95 uppercase tracking-[0.2em] text-sm"
+          >
+            Confirm Registration
+          </button>
+        </div>
+      </form>
     </div>
   );
 };

@@ -11,60 +11,65 @@ const TopNavbar = ({ toggleSidebar, sidebarOpen }) => {
   };
 
   return (
-    <nav className="h-[60px] header-gradient fixed top-0 left-0 right-0 flex items-center justify-between px-6 z-40 shadow-lg">
+    <nav className="h-[70px] bg-dark-bg/80 backdrop-blur-xl fixed top-0 left-0 right-0 flex items-center justify-between px-8 z-40 border-b border-dark-border">
       {/* Left: Hamburger + Title */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-6">
         <button
           onClick={toggleSidebar}
-          className="text-white p-2 rounded-lg hover:bg-white/10 transition-all duration-200 focus:outline-none"
+          className="text-gray-400 p-2 rounded-xl hover:bg-white/5 transition-all duration-200 focus:outline-none"
           title={sidebarOpen ? 'Close menu' : 'Open menu'}
         >
           {sidebarOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
+        
         <img
           src="/bsnl-logo.png"
           alt="BSNL Logo"
-          className="h-14 w-auto object-contain drop-shadow-md"
+          className="h-12 w-auto object-contain drop-shadow-lg brightness-110"
         />
-        <h1 className="text-xl font-bold text-white tracking-tight">Enterprise Business Guntur</h1>
-      </div>
-
-      {/* Centre: Search */}
-      <div className="flex-1 max-w-xl px-12">
-        <div className="relative">
-          <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
-            <Search size={18} />
-          </span>
-          <input 
-            type="text" 
-            placeholder="Search..."
-            className="w-full pl-10 pr-4 py-2 bg-white border-transparent focus:ring-2 focus:ring-white/20 rounded-lg transition-all outline-none text-sm text-gray-800 shadow-inner"
-          />
+        
+        <div className="hidden md:flex items-center gap-3">
+          <div className="relative">
+            <span className="absolute inset-y-0 left-3 flex items-center text-gray-500">
+              <Search size={18} />
+            </span>
+            <input 
+              type="text" 
+              placeholder="Search for customers, lines, or tariffs..."
+              className="w-[400px] pl-10 pr-4 py-2.5 bg-dark-card border border-dark-border focus:ring-2 focus:ring-primary/20 rounded-xl transition-all outline-none text-sm text-gray-300 placeholder:text-gray-600"
+            />
+          </div>
         </div>
       </div>
 
       {/* Right: Actions */}
       <div className="flex items-center gap-6">
-        <button className="relative text-white/80 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-full">
-          <Bell size={20} />
-          <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 border-2 border-[#005BAA] rounded-full"></span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button className="relative text-gray-400 hover:text-white transition-colors p-2.5 hover:bg-white/5 rounded-xl border border-transparent hover:border-dark-border">
+            <Bell size={20} />
+            <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-primary rounded-full shadow-[0_0_10px_rgba(0,180,216,0.5)]"></span>
+          </button>
+          
+          <button className="text-gray-400 hover:text-white transition-colors p-2.5 hover:bg-white/5 rounded-xl border border-transparent hover:border-dark-border">
+            <Menu size={20} className="rotate-90" />
+          </button>
+        </div>
         
-        <div className="h-8 w-[1px] bg-white/20"></div>
+        <div className="h-8 w-[1px] bg-dark-border"></div>
 
-        <div className="flex items-center gap-3 cursor-pointer hover:bg-white/5 p-1 pr-3 rounded-full transition-all group">
-          <div className="w-9 h-9 bg-white/10 rounded-full flex items-center justify-center text-white border border-white/20 group-hover:bg-white group-hover:text-primary transition-all">
-            <User size={18} />
+        <div className="flex items-center gap-4 cursor-pointer group">
+          <div className="flex flex-col text-right">
+            <p className="text-sm font-bold text-white leading-tight">BSNL</p>
+            <p className="text-[10px] font-bold text-primary tracking-wider uppercase">Enterprise Admin</p>
           </div>
-          <div className="hidden lg:block text-right">
-            <p className="text-sm font-semibold text-white leading-tight">Admin User</p>
-            <p className="text-xs text-white/70 leading-tight">Guntur Office</p>
+          <div className="w-10 h-10 bg-dark-card rounded-xl border border-dark-border flex items-center justify-center text-gray-400 group-hover:border-primary group-hover:text-primary transition-all overflow-hidden">
+            <User size={20} />
           </div>
         </div>
 
         <button 
           onClick={handleLogout}
-          className="text-white/60 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-full" 
+          className="text-gray-500 hover:text-red-400 transition-colors p-2.5 hover:bg-red-500/5 rounded-xl" 
           title="Logout"
         >
           <LogOut size={20} />

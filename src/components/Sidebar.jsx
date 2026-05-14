@@ -13,7 +13,8 @@ import {
   Inbox, 
   ChevronDown,
   ChevronRight,
-  MessageCircle
+  MessageCircle,
+  ClipboardList
 } from 'lucide-react';
 
 const Sidebar = ({ isOpen, onClose }) => {
@@ -87,6 +88,7 @@ const Sidebar = ({ isOpen, onClose }) => {
     { name: 'Charts', icon: BarChart3, route: '/charts' },
     { name: 'Search', icon: Search, route: '/search' },
     { name: 'Short Code', icon: Hash, route: '/short-code' },
+    { name: 'Tasks', icon: ClipboardList, route: '/tasks' },
     { name: 'Complaints', icon: AlertCircle, route: '/complaints' },
     { name: 'Inbox', icon: Inbox, route: '/inbox' },
   ];
@@ -98,31 +100,39 @@ const Sidebar = ({ isOpen, onClose }) => {
   return (
     <>
       <div
-        className={`fixed inset-0 bg-black/40 z-40 transition-opacity duration-300 ${
+        className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity duration-300 ${
           isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}
         onClick={onClose}
       />
 
       <div
-        className={`w-[250px] h-screen fixed left-0 top-0 bg-[#005BAA] text-white flex flex-col z-50 transition-transform duration-300 ease-in-out border-r border-white/5 ${
+        className={`w-[260px] h-screen fixed left-0 top-0 bg-dark-sidebar text-white flex flex-col z-50 transition-transform duration-300 ease-in-out border-r border-dark-border ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="h-[60px] flex items-center px-6 border-b border-white/10 gap-3 bg-[#002D62]">
-          <span className="font-black text-lg tracking-tight">EB GUNTUR</span>
+        <div className="h-[80px] flex items-center px-6 gap-4 mb-4">
+          <img
+            src="/bsnl-logo.png"
+            alt="BSNL Logo"
+            className="h-14 w-auto object-contain brightness-110"
+          />
+          <div className="flex flex-col">
+            <span className="font-black text-xl tracking-tight leading-none text-white">EB GUNTUR</span>
+            <span className="text-[10px] font-bold text-primary tracking-[0.1em] uppercase mt-1">Smart Portal</span>
+          </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto py-6 px-4 space-y-1.5 content-scroll">
+        <div className="flex-1 overflow-y-auto px-4 space-y-1.5 content-scroll">
           {menuItems.map((item) => (
             <div key={item.name} className="space-y-1">
               {item.hasDropdown ? (
                 <div className="space-y-1">
                   <div 
-                    className={`flex items-center gap-1 rounded-lg transition-all duration-300 ${
+                    className={`flex items-center gap-1 rounded-xl transition-all duration-300 ${
                       isSubItemActive(item.subItems) || (item.route && location.pathname === item.route)
-                        ? 'bg-[#002D62] shadow-lg border-l-4 border-cyan-300' 
-                        : 'hover:bg-white/10'
+                        ? 'bg-primary/10 text-primary' 
+                        : 'hover:bg-white/5'
                     }`}
                   >
                     {item.route ? (
@@ -130,20 +140,20 @@ const Sidebar = ({ isOpen, onClose }) => {
                         to={item.route}
                         onClick={onClose}
                         className={({ isActive }) => 
-                          `flex-1 flex items-center gap-3 px-4 py-3 rounded-lg ${isActive ? 'font-black' : 'font-medium opacity-80'}`
+                          `flex-1 flex items-center gap-3 px-4 py-3 rounded-xl ${isActive ? 'font-bold' : 'font-medium text-gray-400'}`
                         }
                       >
-                        <item.icon size={18} />
+                        <item.icon size={20} className={location.pathname === item.route ? 'text-primary' : 'text-gray-400'} />
                         <span className="text-sm">{item.name}</span>
                       </NavLink>
                     ) : (
                       <button 
                         onClick={() => toggleDropdown(item.name)}
-                        className={`flex-1 flex items-center gap-3 px-4 py-3 rounded-lg text-left ${
-                          isSubItemActive(item.subItems) ? 'font-black' : 'font-medium opacity-80'
+                        className={`flex-1 flex items-center gap-3 px-4 py-3 rounded-xl text-left ${
+                          isSubItemActive(item.subItems) ? 'font-bold' : 'font-medium text-gray-400'
                         }`}
                       >
-                        <item.icon size={18} />
+                        <item.icon size={20} className={isSubItemActive(item.subItems) ? 'text-primary' : 'text-gray-400'} />
                         <span className="text-sm">{item.name}</span>
                       </button>
                     )}
@@ -160,7 +170,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                   </div>
                   
                   {(openDropdowns[item.name] || isSubItemActive(item.subItems)) && (
-                    <div className="pl-6 space-y-1 border-l border-white/10 ml-6 my-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                    <div className="pl-6 space-y-1 border-l-2 border-dark-border ml-6 my-1 animate-in fade-in slide-in-from-left-1 duration-200">
                       {item.subItems.map(sub => (
                         <NavLink
                           key={sub.name}
@@ -169,8 +179,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                           className={({ isActive }) => 
                             `flex items-center gap-3 px-4 py-2 rounded-lg text-[13px] transition-all duration-200 ${
                               isActive 
-                                ? "bg-[#1b1464] text-white font-black shadow-md border-l-2 border-cyan-300" 
-                                : "text-white/70 hover:text-white hover:bg-white/10 font-medium"
+                                ? "text-primary font-bold" 
+                                : "text-gray-500 hover:text-white hover:bg-white/5"
                             }`
                           }
                         >
@@ -185,10 +195,10 @@ const Sidebar = ({ isOpen, onClose }) => {
                   to={item.route}
                   onClick={onClose}
                   className={({ isActive }) => 
-                    `sidebar-link ${isActive ? "sidebar-link-active" : "font-medium opacity-80"}`
+                    `sidebar-link ${isActive ? "sidebar-link-active" : "font-medium"}`
                   }
                 >
-                  <item.icon size={18} />
+                  <item.icon size={20} className={location.pathname === item.route ? 'text-primary' : 'text-gray-400'} />
                   <span className="text-sm">{item.name}</span>
                 </NavLink>
               )}
@@ -196,16 +206,15 @@ const Sidebar = ({ isOpen, onClose }) => {
           ))}
         </div>
 
-        <div className="p-4 border-t border-white/10">
-          <a 
-            href="https://wa.me/911234567890" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="flex items-center gap-3 px-4 py-3 rounded-lg bg-green-500 hover:bg-green-600 transition-colors text-white font-medium"
+        <div className="p-4 mt-auto border-t border-dark-border">
+          <button 
+            className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all"
           >
-            <MessageCircle size={18} />
-            <span>WhatsApp Support</span>
-          </a>
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-dark-card border border-dark-border flex items-center justify-center font-bold text-xs text-white">N</div>
+              <span className="text-sm font-medium">Collapse Menu</span>
+            </div>
+          </button>
         </div>
       </div>
     </>

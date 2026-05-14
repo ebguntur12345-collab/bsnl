@@ -14,31 +14,31 @@ const CustomSelect = ({ label, options, selected, onSelect, disabled = false, pl
   }, []);
 
   return (
-    <div className="relative w-48" ref={ref}>
+    <div className="relative w-64" ref={ref}>
       <button
         type="button"
         disabled={disabled}
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full px-4 py-2 bg-white border border-blue-200 rounded text-sm text-gray-700 text-left flex justify-between items-center outline-none focus:ring-2 focus:ring-[#00bfff] shadow-sm transition-all ${
-          disabled ? 'opacity-50 cursor-not-allowed bg-gray-50' : 'cursor-pointer hover:border-[#00bfff]'
+        className={`w-full px-5 py-2.5 bg-dark-card border border-dark-border rounded-xl text-sm text-gray-300 text-left flex justify-between items-center outline-none focus:ring-2 focus:ring-primary/20 transition-all ${
+          disabled ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer hover:border-primary'
         }`}
       >
-        <span className="truncate">{selected || placeholder}</span>
-        <ChevronDown size={14} className={`text-[#3b3598] flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <span className="truncate font-medium">{selected || placeholder}</span>
+        <ChevronDown size={16} className={`text-gray-500 flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && !disabled && (
-        <div className="absolute top-full left-0 w-full mt-1 bg-white border border-blue-200 rounded shadow-xl z-[200] max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-1 duration-200">
+        <div className="absolute top-full left-0 w-full mt-2 bg-dark-card border border-dark-border rounded-xl shadow-2xl z-[200] max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-1 duration-200">
           {options.map((opt) => (
             <div
               key={opt}
               onClick={() => { onSelect(opt); setIsOpen(false); }}
-              className={`px-4 py-2 text-sm cursor-pointer flex justify-between items-center hover:bg-blue-50 transition-colors ${
-                selected === opt ? 'bg-blue-50 text-blue-700 font-bold' : 'text-gray-700'
+              className={`px-5 py-3 text-sm cursor-pointer flex justify-between items-center hover:bg-white/5 transition-colors ${
+                selected === opt ? 'bg-primary/10 text-primary font-bold' : 'text-gray-400'
               }`}
             >
               <span className="truncate">{opt}</span>
-              {selected === opt && <Check size={12} className="flex-shrink-0" />}
+              {selected === opt && <Check size={14} className="flex-shrink-0" />}
             </div>
           ))}
         </div>
@@ -46,8 +46,6 @@ const CustomSelect = ({ label, options, selected, onSelect, disabled = false, pl
     </div>
   );
 };
-
-// Sample data removed
 
 const columns = [
   { header: 'id',          key: 'id' },
@@ -59,7 +57,6 @@ const columns = [
   { header: 'BA Name',     key: 'baName' },
 ];
 
-// ─── Page component ───────────────────────────────────────────────────────────
 const Contacts = () => {
   const [selectedState, setSelectedState]     = useState('Andhra Pradesh');
   const [selectedDistrict, setSelectedDistrict] = useState('Guntur');
@@ -77,7 +74,6 @@ const Contacts = () => {
     }));
   };
 
-  // Load localStorage registered entries
   const loadAllData = () => {
     const registered = JSON.parse(localStorage.getItem('cctRegistrations') || '[]');
     return registered;
@@ -94,7 +90,6 @@ const Contacts = () => {
   useEffect(() => {
     const all = loadAllData();
     setFilteredData(applyFilter(all, selectedState, selectedDistrict));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleStateChange = (state) => {
@@ -109,121 +104,121 @@ const Contacts = () => {
     setCurrentPage(1);
   };
 
-  const handleDelete = (id) => {
-    const registered = JSON.parse(localStorage.getItem('cctRegistrations') || '[]');
-    localStorage.setItem('cctRegistrations', JSON.stringify(registered.filter(r => r.id !== id)));
-    const all = loadAllData();
-    setFilteredData(applyFilter(all, selectedState, selectedDistrict));
-  };
-
   const totalPages = Math.ceil(filteredData.length / rowsPerPage);
   const paginated  = filteredData.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      {/* Filter Form */}
-      <div className="flex justify-center mt-6">
-        <form onSubmit={handleSubmit} className="flex items-center gap-4 flex-wrap justify-center">
-          <label className="text-[#3b3598] font-medium text-sm whitespace-nowrap">Select Circle Name :</label>
-          <CustomSelect
-            options={Object.keys(statesData)}
-            selected={selectedState}
-            onSelect={handleStateChange}
-            placeholder="Select State"
-          />
+    <div className="space-y-8 animate-in fade-in duration-500 max-w-[1600px] mx-auto p-8 bg-dark-bg min-h-screen">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-4">
+        <div>
+          <h1 className="text-3xl font-black text-white tracking-tight">Enterprise Contacts</h1>
+          <p className="text-gray-400 font-medium mt-1">Manage and filter BSNL enterprise business contacts by region.</p>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="flex items-center gap-4 flex-wrap bg-dark-card p-4 rounded-2xl border border-dark-border shadow-lg">
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] font-black text-primary uppercase tracking-widest">Circle</span>
+            <CustomSelect
+              options={Object.keys(statesData)}
+              selected={selectedState}
+              onSelect={handleStateChange}
+              placeholder="Select State"
+            />
+          </div>
 
-          <label className="text-[#3b3598] font-medium text-sm whitespace-nowrap ml-4">Select BA Name :</label>
-          <CustomSelect
-            options={districts}
-            selected={selectedDistrict}
-            onSelect={setSelectedDistrict}
-            disabled={!selectedState}
-            placeholder="Select District"
-          />
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] font-black text-primary uppercase tracking-widest whitespace-nowrap">BA Name</span>
+            <CustomSelect
+              options={districts}
+              selected={selectedDistrict}
+              onSelect={setSelectedDistrict}
+              disabled={!selectedState}
+              placeholder="Select District"
+            />
+          </div>
 
           <button
             type="submit"
-            className="ml-4 px-6 py-2 bg-[#00bfff] text-white rounded font-medium hover:bg-[#009acd] transition-colors shadow-sm text-sm"
+            className="px-8 py-2.5 bg-primary text-white rounded-xl font-black hover:shadow-[0_0_20px_rgba(0,180,216,0.3)] transition-all text-sm uppercase tracking-wider"
           >
             Submit
           </button>
         </form>
       </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-md shadow border border-gray-100 overflow-hidden mt-6">
+      <div className="bg-dark-card rounded-2xl border border-dark-border overflow-hidden shadow-2xl">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm border-collapse">
             <thead>
-              <tr className="bg-[#00bfff] text-white">
+              <tr className="bg-dark-bg/50 text-gray-400 border-b border-dark-border">
                 {columns.map((col, i) => (
-                  <th key={i} className="px-4 py-3 font-semibold whitespace-nowrap border-r border-white/20">
+                  <th key={i} className="px-6 py-4 text-[11px] font-black uppercase tracking-widest">
                     {col.header}
                   </th>
                 ))}
-                <th className="px-4 py-3 font-semibold whitespace-nowrap text-center w-16">
-                  Details
+                <th className="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-center">
+                  Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-dark-border/30">
               {paginated.length === 0 ? (
                 <tr>
-                  <td colSpan={columns.length + 1} className="text-center py-8 text-gray-400">No records found</td>
+                  <td colSpan={columns.length + 1} className="text-center py-20 text-gray-600 font-bold uppercase tracking-widest text-xs">
+                    No contacts found in this region
+                  </td>
                 </tr>
               ) : paginated.map((row, i) => {
                 const rowId = row.id || i;
                 return (
                   <React.Fragment key={rowId}>
-                    <tr className="hover:bg-blue-50/30 transition-colors odd:bg-white even:bg-gray-50/50">
+                    <tr className="hover:bg-white/[0.02] transition-colors group">
                       {columns.map((col, j) => (
-                        <td key={j} className="px-4 py-3 text-gray-600 truncate border-r border-gray-100" title={row[col.key]}>
+                        <td key={j} className="px-6 py-4 text-gray-300 font-medium truncate max-w-[200px]" title={row[col.key]}>
                           {row[col.key]}
                         </td>
                       ))}
-                      <td className="px-4 py-3 text-center">
+                      <td className="px-6 py-4 text-center">
                         <button 
                           onClick={() => toggleRow(rowId)} 
-                          className="p-1.5 text-[#00bfff] hover:bg-blue-100 rounded-full transition-colors flex items-center justify-center mx-auto"
-                          title="View Details"
+                          className={`p-2 rounded-xl transition-all flex items-center justify-center mx-auto ${
+                            expandedRows[rowId] ? 'bg-primary text-white shadow-[0_0_15px_rgba(0,180,216,0.3)]' : 'text-primary hover:bg-primary/10'
+                          }`}
                         >
                           {expandedRows[rowId] ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
                         </button>
                       </td>
                     </tr>
                     {expandedRows[rowId] && (
-                      <tr className="bg-blue-50/20">
-                        <td colSpan={columns.length + 1} className="p-0 border-b border-blue-100">
-                          <div className="px-8 py-5 animate-in fade-in slide-in-from-top-2 duration-300">
-                            <div className="flex items-center gap-2 mb-4 border-b border-blue-100 pb-2 inline-flex">
-                              <Info size={16} className="text-[#3b3598]" />
-                              <h4 className="font-black text-[#3b3598] text-sm uppercase tracking-wider">Registration Details</h4>
+                      <tr>
+                        <td colSpan={columns.length + 1} className="p-0 bg-dark-bg/30">
+                          <div className="px-10 py-8 animate-in fade-in slide-in-from-top-4 duration-500">
+                            <div className="flex items-center gap-3 mb-6">
+                              <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary border border-primary/20">
+                                <Info size={20} />
+                              </div>
+                              <h4 className="font-black text-white text-lg tracking-tight">Full Registration Details</h4>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 bg-white p-5 rounded-xl border border-blue-100 shadow-sm">
-                              <div>
-                                <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-1">Service Type</p>
-                                <p className="text-sm font-semibold text-gray-800">{row.service || 'N/A'}</p>
-                              </div>
-                              <div>
-                                <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-1">Plan</p>
-                                <p className="text-sm font-semibold text-gray-800">{row.plan || 'N/A'}</p>
-                              </div>
-                              <div>
-                                <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-1">Circuit ID / Phone</p>
-                                <p className="text-sm font-semibold text-gray-800">{row.circuitId || 'N/A'}</p>
-                              </div>
-                              <div>
-                                <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-1">Billing Account No</p>
-                                <p className="text-sm font-semibold text-gray-800">{row.billingAccountNo || 'N/A'}</p>
-                              </div>
-                              <div className="md:col-span-2 lg:col-span-3">
-                                <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-1">Customer Address</p>
-                                <p className="text-sm font-semibold text-gray-800">{row.address || 'N/A'}</p>
+                            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 bg-dark-card p-6 rounded-2xl border border-dark-border shadow-inner">
+                              {[
+                                { label: 'Service Type', value: row.service },
+                                { label: 'Plan', value: row.plan },
+                                { label: 'Circuit ID / Phone', value: row.circuitId },
+                                { label: 'Billing Account No', value: row.billingAccountNo },
+                              ].map((item, idx) => (
+                                <div key={idx}>
+                                  <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">{item.label}</p>
+                                  <p className="text-sm font-bold text-gray-200">{item.value || 'N/A'}</p>
+                                </div>
+                              ))}
+                              <div className="md:col-span-2 lg:col-span-3 pt-4 mt-2 border-t border-dark-border/50">
+                                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">Customer Address</p>
+                                <p className="text-sm font-bold text-gray-200">{row.address || 'N/A'}</p>
                               </div>
                               {row.registeredAt && (
-                                <div className="md:col-span-3 lg:col-span-4 pt-3 mt-1 border-t border-gray-50 flex items-center gap-2">
-                                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                                  <p className="text-xs font-semibold text-gray-400">Registered on: {row.registeredAt}</p>
+                                <div className="md:col-span-3 lg:col-span-4 pt-6 mt-4 border-t border-dark-border/50 flex items-center gap-3">
+                                  <div className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_10px_rgba(0,180,216,0.8)]"></div>
+                                  <p className="text-xs font-bold text-gray-500 tracking-wider">REGISTERED ON: <span className="text-primary">{row.registeredAt}</span></p>
                                 </div>
                               )}
                             </div>
@@ -239,27 +234,34 @@ const Contacts = () => {
         </div>
 
         {/* Pagination */}
-        <div className="px-6 py-3 bg-white border-t border-gray-100 flex items-center justify-end">
-          <div className="flex items-center gap-1">
+        <div className="px-8 py-6 bg-dark-bg/30 border-t border-dark-border flex items-center justify-between">
+          <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">
+            Showing {paginated.length} of {filteredData.length} entries
+          </span>
+          <div className="flex items-center gap-3">
             <button
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              className="w-8 h-8 flex items-center justify-center rounded border border-gray-200 text-gray-500 hover:border-[#00bfff] hover:text-[#00bfff] disabled:opacity-40 transition-all text-xs"
-            >«</button>
-            {Array.from({ length: totalPages || 1 }, (_, i) => i + 1).map(p => (
-              <button
-                key={p}
-                onClick={() => setCurrentPage(p)}
-                className={`w-8 h-8 flex items-center justify-center rounded text-sm font-bold transition-all ${
-                  p === currentPage ? 'bg-[#007bff] text-white shadow' : 'bg-white border border-gray-200 text-gray-600 hover:border-[#00bfff]'
-                }`}
-              >{p}</button>
-            ))}
+              className="p-2.5 bg-dark-card border border-dark-border rounded-xl text-gray-400 hover:text-primary hover:border-primary disabled:opacity-30 transition-all"
+            ><ChevronRight size={18} className="rotate-180" /></button>
+            
+            <div className="flex gap-2">
+              {Array.from({ length: totalPages || 1 }, (_, i) => i + 1).map(p => (
+                <button
+                  key={p}
+                  onClick={() => setCurrentPage(p)}
+                  className={`w-10 h-10 flex items-center justify-center rounded-xl text-xs font-black transition-all ${
+                    p === currentPage ? 'bg-primary text-white shadow-[0_0_15px_rgba(0,180,216,0.3)]' : 'bg-dark-card border border-dark-border text-gray-400 hover:border-primary hover:text-white'
+                  }`}
+                >{p}</button>
+              ))}
+            </div>
+
             <button
               onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
-              className="w-8 h-8 flex items-center justify-center rounded border border-gray-200 text-gray-500 hover:border-[#00bfff] hover:text-[#00bfff] disabled:opacity-40 transition-all text-xs"
-            >»</button>
+              className="p-2.5 bg-dark-card border border-dark-border rounded-xl text-gray-400 hover:text-primary hover:border-primary disabled:opacity-30 transition-all"
+            ><ChevronRight size={18} /></button>
           </div>
         </div>
       </div>

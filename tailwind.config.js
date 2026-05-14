@@ -7,13 +7,19 @@ export default {
   theme: {
     extend: {
       colors: {
+        dark: {
+          bg: '#060b13',
+          card: '#0a0f1b',
+          sidebar: '#080d16',
+          border: '#1e293b',
+        },
         primary: {
-          DEFAULT: '#005BAA', // BSNL Blue
-          light: '#00B4D8',
-          dark: '#002D62',
+          DEFAULT: '#00b4d8', // Cyan accent
+          light: '#38bdf8',
+          dark: '#075985',
         },
         secondary: {
-          DEFAULT: '#00D2FF', // Vibrant Cyan
+          DEFAULT: '#1e293b', // Slate background for components
         },
         bsnl: {
           blue: '#005BAA',

@@ -34,6 +34,7 @@ const CustomerContacts = () => {
       billingAccountNo: r.billingAccountNo,
       address: r.address,
       registeredAt: r.registeredAt,
+      dateOfCommission: r.dateOfCommission || '',
     }));
     setAllContacts(mapped);
   };
@@ -171,6 +172,10 @@ const CustomerContacts = () => {
                               <div>
                                 <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-1">Billing Account No</p>
                                 <p className="text-sm font-semibold text-gray-800">{item.billingAccountNo || 'N/A'}</p>
+                              </div>
+                              <div>
+                                <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-1">Date of Commission</p>
+                                <p className="text-sm font-semibold text-gray-800">{item.dateOfCommission || 'N/A'}</p>
                               </div>
                               <div className="md:col-span-2 lg:col-span-3">
                                 <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-1">Customer Address</p>

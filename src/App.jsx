@@ -16,11 +16,14 @@ import Tariffs from './pages/Tariffs';
 import BulkCCTs from './pages/BulkCCTs';
 import CCTRegistration from './pages/CCTRegistration';
 import LeasedLines from './pages/LeasedLines';
+import ILL576Users from './pages/ILL576Users';
 import PdfViewer from './pages/PdfViewer';
 import Login from './pages/Login';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 import CategoryPdfs from './pages/CategoryPdfs';
+import Tasks from './pages/Tasks';
+import WorkerLogin from './pages/WorkerLogin';
 
 import { useParams } from 'react-router-dom';
 
@@ -46,6 +49,7 @@ function App() {
           <Route path="custRegistration" element={<CustomerRegistration />} />
           <Route path="leased-lines/bulk-ccts" element={<BulkCCTs />} />
           <Route path="leased-lines/registration" element={<CCTRegistration />} />
+          <Route path="leased-lines/ill-576" element={<ILL576Users />} />
           <Route path="tariffs" element={<Tariffs />} />
           <Route path="tariffs/sip-trunk" element={<PdfViewer title="SIP Trunk Tariff" />} />
           <Route path="tariffs/internet-leased-line" element={<PdfViewer title="Internet Leased Line Tariff" />} />
@@ -66,6 +70,9 @@ function App() {
           <Route path="complaints" element={<Complaints />} />
           <Route path="inbox" element={<Inbox />} />
           <Route path="leased-lines" element={<LeasedLines />} />
+          <Route path="tasks" element={<Tasks />} />
+          <Route path="workers-login" element={<WorkerLogin />} />
+          <Route path="wokers-login" element={<WorkerLogin />} />
         </Route>
         <Route path="/admin" element={<AdminLogin />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
