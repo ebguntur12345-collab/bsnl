@@ -95,38 +95,35 @@ const CCTRegistration = () => {
     setForm(prev => ({ ...prev, [field]: e.target.value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const newEntry = {
-      id: Date.now(),
-      serviceType: form.serviceType,
-      // EB Contacts fields
-      circle: selectedState || '—',
-      baName: selectedDistrict || '—',
-      name: form.enterpriseName,
-      primaryContactName: form.primaryContactName,
-      mobile: form.contactNo,
-      email: form.email,
-      designation: form.designation || '—',
-      // Extra fields
-      companyName: form.enterpriseName,
-      location: selectedDistrict ? `${selectedDistrict}, ${selectedState}` : selectedState || '—',
-      contactName: form.primaryContactName || form.enterpriseName,
-      contactNo: form.contactNo,
-      mailId: form.email,
-      registeredAt: new Date().toLocaleString(),
-      isNew: true,
-    };
+    try {
+      const { error } = await supabase.from('eb_contacts').insert([
+        {
+          circle: selectedState || '—',
+          designation: form.designation || '—',
+          name: form.primaryContactName || form.enterpriseName || '—',
+          mobile: form.contactNo || '—',
+          mail_id: form.email || '—',
+          ba_name: selectedDistrict || '—'
+        }
+      ]);
 
-    // Save to localStorage so CustomerContacts can read it
-    const existing = JSON.parse(localStorage.getItem('cctRegistrations') || '[]');
-    localStorage.setItem('cctRegistrations', JSON.stringify([newEntry, ...existing]));
+      if (error) {
+        console.error('Error inserting EB Contact to Supabase:', error.message);
+        alert('Failed to register contact in database: ' + error.message);
+        return;
+      }
 
-    setSuccess(true);
-    setTimeout(() => {
-      navigate('/contacts/eb-contacts');
-    }, 1500);
+      setSuccess(true);
+      setTimeout(() => {
+        navigate('/contacts/eb-contacts');
+      }, 1500);
+    } catch (err) {
+      console.error('Exception:', err);
+      alert('An unexpected error occurred.');
+    }
   };
 
   return (

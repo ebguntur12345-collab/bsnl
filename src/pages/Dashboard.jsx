@@ -48,72 +48,44 @@ const DashboardStatCard = ({ title, subtitle, value, service_type, icon: Icon, c
 const Dashboard = () => {
   const [taskStats, setTaskStats] = useState({ total: 0, completed: 0, rate: 0, recentTasks: [] });
   const [metrics, setMetrics] = useState([]);
-
-  const iconMap = { Zap, RefreshCw, Phone, Users, ShoppingCart, Monitor, CreditCard, HelpCircle, DollarSign, CheckCircle };
+  const [loadingMetrics, setLoadingMetrics] = useState(false);
 
   useEffect(() => {
-    // Fetch Metrics
+    // Fetch Metrics from Supabase
     const fetchMetrics = async () => {
-      const { data, error } = await supabase.from('enterprise_metrics').select('*').order('created_at', { ascending: true });
-      
-      // Load actual counts from registrations
-      const regs = JSON.parse(localStorage.getItem('cctRegistrations') || '[]');
-      
-      const processMetricValue = (m) => {
-        if (!m.service_type || m.service_type === 'None') return m.value || '0';
-        const count = regs.filter(r => {
-          const rService = (r.serviceType || r.service || '').toLowerCase();
-          const mService = (m.service_type || '').toLowerCase();
-          const mTitle = (m.title || '').toLowerCase();
-          if (!mService || mService === 'none') {
-            // If no service type, match exactly against title
-            return rService === mTitle;
-          }
-          
-          return rService === mService || 
-                 rService === mTitle ||
-                 (rService.includes('ill') && mService.includes('ill')) ||
-                 (rService.includes('mpls') && mService.includes('mpls')) ||
-                 (rService.includes('sip') && mService.includes('sip')) ||
-                 (rService.includes('pri') && mService.includes('pri')) ||
-                 (rService.includes('ftth') && mService.includes('ftth')) ||
-                 (rService.includes('mmvc') && mService.includes('mmvc'));
-        }).length;
-        // Use the title prefix + count (e.g., "ILL 576")
-        const prefix = m.title.split(' ')[0] || '';
-        return `${prefix} ${count}`;
-      };
+      setLoadingMetrics(true);
+      const defaults = [
+        { title: "ILL CCTs", subtitle: "ILL Circuits", service_type: "Internet Leased Line (ILL)", table: "ill_data", icon: Zap },
+        { title: "MPLS CCTs", subtitle: "MPLS Circuits", service_type: "MPLS", table: "mpls_data", icon: RefreshCw },
+        { title: "ISDN PRI", subtitle: "PRI Circuits", service_type: "ISDN PRI", table: "pri_data", icon: Phone },
+        { title: "SIP TRUNKS", subtitle: "SIP Trunks", service_type: "SIP Trunk", table: "sip_data", icon: Phone },
+        { title: "MMVC", subtitle: "MMVC Circuits", service_type: "MMVC", table: "mmvc_data", icon: CreditCard },
+        { title: "NMECT CCTs", subtitle: "NMECT Circuits", service_type: "NMECT", table: "nmect_data", icon: ShoppingCart },
+        { title: "CGGB", subtitle: "CGGB Circuits", service_type: "CGGB", table: "cggb", icon: Users },
+        { title: "Tobacco Board", subtitle: "Tobacco Board Circuits", service_type: "Tobacco Board", table: "tobacco_board", icon: Zap },
+        { title: "NREGS", subtitle: "NREGS Circuits", service_type: "NREGS", table: "nregs", icon: RefreshCw },
+        { title: "Toll Free", subtitle: "Toll Free Circuits", service_type: "Toll Free", table: "toll_free", icon: Phone },
+      ];
 
-      if (data && data.length > 0) {
-        setMetrics(data.map(m => ({
-          ...m,
-          value: processMetricValue(m),
-          icon: iconMap[m.icon_name] || HelpCircle
-        })));
-      } else {
-        // Fallback to defaults with dynamic counts
-        const defaults = [
-          { title: "ILL CCTs", subtitle: "ILL 576", service_type: "Internet Leased Line (ILL)", icon: Zap },
-          { title: "MPLS CCTs", subtitle: "MPLS 250", service_type: "MPLS", icon: RefreshCw },
-          { title: "ISDN PRI", subtitle: "PRI 97", service_type: "ISDN PRI", icon: Phone },
-          { title: "SIP TRUNKS", subtitle: "SIP 33", service_type: "SIP Trunk", icon: Phone },
-          { title: "MMVC", subtitle: "MMVC", service_type: "MMVC", icon: CreditCard },
-          { title: "NMECT CCTs", subtitle: "NMECT CCTs", service_type: "None", value: "33", icon: ShoppingCart },
-          { title: "DOJ", subtitle: "DOJ", service_type: "Internet Leased Line (ILL)", icon: Users },
-          { title: "CG6B", subtitle: "CG6B", service_type: "MPLS", icon: Users },
-          { title: "Election Comission", subtitle: "Election Comission", service_type: "Toll Free", icon: CheckCircle },
-          { title: "Tobacco Board", subtitle: "Tobacco Board", service_type: "Internet Leased Line (ILL)", icon: Zap },
-          { title: "NREGS", subtitle: "NREGS", service_type: "FTTH", icon: RefreshCw },
-          { title: "Collectorates", subtitle: "Collectorates", service_type: "Internet Leased Line (ILL)", icon: Users },
-          { title: "NHM", subtitle: "NHM", service_type: "FTTH", icon: Users },
-          { title: "Toll Free", subtitle: "Toll Free", service_type: "Toll Free", icon: Phone },
-        ];
+      try {
+        const counts = await Promise.all(
+          defaults.map(async (item) => {
+            const { count, error } = await supabase
+              .from(item.table)
+              .select('*', { count: 'exact', head: true });
+            return error ? 0 : (count || 0);
+          })
+        );
 
-        setMetrics(defaults.map(m => ({
+        setMetrics(defaults.map((m, idx) => ({
           ...m,
-          value: m.value || processMetricValue(m),
+          value: `${counts[idx]}`,
           icon: m.icon
         })));
+      } catch (err) {
+        console.error('Error fetching live metrics:', err);
+      } finally {
+        setLoadingMetrics(false);
       }
     };
     fetchMetrics();
@@ -133,7 +105,7 @@ const Dashboard = () => {
   }, []);
 
   return (
-    <div className="p-8 space-y-6 animate-in fade-in duration-700 max-w-[1600px] mx-auto min-h-screen">
+    <div className="p-8 space-y-6 animate-in fade-in duration-700 max-w-[1600px] mx-auto min-h-screen bg-dark-bg">
       {/* Header */}
       <div className="flex flex-col gap-0.5">
         <h1 className="text-2xl font-black text-white tracking-tight">Enterprise Overview</h1>
@@ -141,13 +113,23 @@ const Dashboard = () => {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-3">
-        {metrics.map((m, i) => (
-          <DashboardStatCard key={i} {...m} />
-        ))}
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        {loadingMetrics ? (
+          Array.from({ length: 10 }).map((_, i) => (
+            <div key={i} className="bg-dark-card rounded-xl p-5 border border-dark-border h-24 animate-pulse flex flex-col justify-between">
+              <div className="h-2 w-12 bg-white/5 rounded"></div>
+              <div className="h-4 w-20 bg-white/5 rounded"></div>
+              <div className="h-6 w-8 bg-white/5 rounded mt-2"></div>
+            </div>
+          ))
+        ) : (
+          metrics.map((m, i) => (
+            <DashboardStatCard key={i} {...m} />
+          ))
+        )}
       </div>
 
-      {/* Placeholder for future enterprise metrics */}
+      {/* Progress & Quick Insights */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {/* Task Progress Widget */}
         <div className="bg-dark-card p-8 rounded-3xl border border-dark-border relative overflow-hidden group flex flex-col">
@@ -203,7 +185,7 @@ const Dashboard = () => {
           <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 blur-[100px] rounded-full pointer-events-none"></div>
           <h3 className="text-sm font-black text-white uppercase tracking-[0.2em] mb-4">Quick Insights</h3>
           <p className="text-gray-500 text-sm leading-relaxed">
-            Guntur SSA currently managing 1,240 active leased line circuits across 4 circles. System health is optimal.
+            Guntur SSA manages thousands of active leased line circuits across all corporate and government clients. The database is actively synced with live field parameters.
           </p>
         </div>
 

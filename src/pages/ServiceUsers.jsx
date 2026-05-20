@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Search, Laptop, ChevronRight, ChevronDown, Info, ArrowLeft, Users, Zap, Phone, Globe, Shield } from 'lucide-react';
+import { Search, Laptop, ChevronRight, ChevronDown, Info, ArrowLeft, Users, Zap, Phone, Globe, Loader2 } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 const ServiceUsers = () => {
   const { serviceType } = useParams();
@@ -8,32 +9,128 @@ const ServiceUsers = () => {
   const [users, setUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedRows, setExpandedRows] = useState({});
+  const [loading, setLoading] = useState(false);
 
   // Human-readable title mapping
   const decodedService = decodeURIComponent(serviceType);
   
   useEffect(() => {
-    const all = JSON.parse(localStorage.getItem('cctRegistrations') || '[]');
-    
-    // Filter logic: Match exact serviceType OR fuzzy match (like 'ILL' in title)
-    const filteredUsers = all.filter(r => {
-      const rService = (r.serviceType || r.service || '').toLowerCase();
-      const target = decodedService.toLowerCase();
-      
-      // Exact match
-      if (rService === target) return true;
-      
-      // Special fuzzy matching for common telecom terms
-      if (target.includes('ill') && rService.includes('ill')) return true;
-      if (target.includes('mpls') && rService.includes('mpls')) return true;
-      if (target.includes('sip') && rService.includes('sip')) return true;
-      if (target.includes('pri') && rService.includes('pri')) return true;
-      if (target.includes('ftth') && rService.includes('ftth')) return true;
-      
-      return false;
-    });
-    
-    setUsers(filteredUsers);
+    const fetchServiceData = async () => {
+      setLoading(true);
+      try {
+        const target = decodedService.toLowerCase();
+        let table = 'customers_data';
+        
+        if (target.includes('ill') || target.includes('leased line')) table = 'ill_data';
+        else if (target.includes('pri')) table = 'pri_data';
+        else if (target.includes('sip')) table = 'sip_data';
+        else if (target.includes('mmvc')) table = 'mmvc_data';
+        else if (target.includes('mpls')) table = 'mpls_data';
+
+        const { data, error } = await supabase
+          .from(table)
+          .select('*')
+          .order('id', { ascending: true });
+
+        if (error) {
+          console.error(error);
+          setUsers([]);
+        } else if (data) {
+          // Map to uniform UI format
+          const mapped = data.map(r => {
+            if (table === 'ill_data') {
+              return {
+                id: r.id,
+                companyName: r.customer_name || '—',
+                mailId: r.email_address || '—',
+                location: r.billing_ssa || '—',
+                circuitId: r.lc_id || '—',
+                plan: r.bandwidth || '—',
+                contactNo: r.phone_no || '—',
+                billingAccountNo: r.billing_account_no || '—',
+                dateOfCommission: r.service_start_date || '—',
+                address: r.address || '—',
+                serviceType: 'Internet Leased Line (ILL)'
+              };
+            } else if (table === 'pri_data') {
+              return {
+                id: r.id,
+                companyName: r.customer_name || '—',
+                mailId: '—',
+                location: '—',
+                circuitId: r.telephone_no || '—',
+                plan: r.pri_plan || '—',
+                contactNo: r.telephone_no || '—',
+                billingAccountNo: r.billing_account_no || '—',
+                dateOfCommission: '—',
+                address: r.address || '—',
+                serviceType: 'ISDN PRI'
+              };
+            } else if (table === 'sip_data') {
+              return {
+                id: r.id,
+                companyName: r.customer_name || '—',
+                mailId: '—',
+                location: '—',
+                circuitId: r.telephone_no || '—',
+                plan: r.sip_plan || '—',
+                contactNo: r.telephone_no || '—',
+                billingAccountNo: r.billing_account_no || '—',
+                dateOfCommission: '—',
+                address: r.address || '—',
+                serviceType: 'SIP Trunk'
+              };
+            } else if (table === 'mmvc_data') {
+              return {
+                id: r.id,
+                companyName: r.customer_name || '—',
+                mailId: '—',
+                location: '—',
+                circuitId: r.telephone_no || '—',
+                plan: r.mmv_plan || '—',
+                contactNo: r.telephone_no || '—',
+                billingAccountNo: r.billing_account_no || '—',
+                dateOfCommission: '—',
+                address: r.address || '—',
+                serviceType: 'MMVC'
+              };
+            } else if (table === 'mpls_data') {
+              return {
+                id: r.id,
+                companyName: r.customer_name || '—',
+                mailId: '—',
+                location: '—',
+                circuitId: r.telephone_no || '—',
+                plan: r.bandwidth || '—',
+                contactNo: r.telephone_no || '—',
+                billingAccountNo: r.billing_account_no || '—',
+                dateOfCommission: '—',
+                address: r.address || '—',
+                serviceType: 'MPLS VPN'
+              };
+            } else {
+              return {
+                id: r.id,
+                companyName: r.company_name || '—',
+                mailId: r.mail_id || '—',
+                location: r.location || '—',
+                circuitId: '—',
+                plan: '—',
+                contactNo: r.contact_no || '—',
+                billingAccountNo: '—',
+                dateOfCommission: '—',
+                address: '—',
+                serviceType: 'General'
+              };
+            }
+          });
+          setUsers(mapped);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchServiceData();
   }, [decodedService]);
 
   const toggleRow = (id) => {
@@ -59,7 +156,7 @@ const ServiceUsers = () => {
   };
 
   return (
-    <div className="p-8 space-y-8 animate-in fade-in duration-500 max-w-[1400px] mx-auto min-h-screen">
+    <div className="p-8 space-y-8 animate-in fade-in duration-500 max-w-[1400px] mx-auto min-h-screen bg-dark-bg">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
@@ -75,7 +172,7 @@ const ServiceUsers = () => {
           <div>
             <h1 className="text-3xl font-black text-white tracking-tight uppercase">{decodedService} Customers</h1>
             <p className="text-gray-400 text-sm font-medium">
-              {filtered.length} active circuit{filtered.length !== 1 ? 's' : ''} found
+              {loading ? 'Loading live circuits…' : `${filtered.length} active circuit${filtered.length !== 1 ? 's' : ''} found`}
             </p>
           </div>
         </div>
@@ -97,16 +194,12 @@ const ServiceUsers = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[
           { label: `Total ${decodedService} Users`, value: users.length, color: 'text-primary' },
-          { label: 'Active Circuits', value: users.filter(u => u.circuitId).length, color: 'text-emerald-400' },
-          { label: 'Recently Registered', value: users.filter(u => {
-            if (!u.registeredAt) return false;
-            const today = new Date().toLocaleDateString();
-            return u.registeredAt.includes(today);
-          }).length, color: 'text-amber-400' },
+          { label: 'Active Circuits', value: users.filter(u => u.circuitId && u.circuitId !== '—').length, color: 'text-emerald-400' },
+          { label: 'Standard Plans', value: users.filter(u => u.plan && u.plan !== '—').length, color: 'text-amber-400' },
         ].map((s, i) => (
           <div key={i} className="bg-dark-card border border-dark-border rounded-2xl p-5 border-l-4 border-l-primary/30">
             <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">{s.label}</p>
-            <p className={`text-3xl font-black ${s.color}`}>{s.value}</p>
+            <p className={`text-3xl font-black ${s.color}`}>{loading ? '…' : s.value}</p>
           </div>
         ))}
       </div>
@@ -117,13 +210,19 @@ const ServiceUsers = () => {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-dark-bg/50 text-gray-500 border-b border-dark-border">
-                {['#', 'Company / Customer', 'Location', 'Circuit ID', 'Plan', 'Contact No', 'Details'].map(h => (
+                {['#', 'Company / Customer', 'Location', 'Circuit ID / Phone', 'Plan / Bandwidth', 'Contact No', 'Details'].map(h => (
                   <th key={h} className="px-5 py-4 font-black text-[10px] uppercase tracking-widest">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-dark-border/30">
-              {filtered.length > 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan="7" className="px-5 py-20 text-center">
+                    <Loader2 size={32} className="animate-spin text-primary mx-auto" />
+                  </td>
+                </tr>
+              ) : filtered.length > 0 ? (
                 filtered.map((user, index) => {
                   const rowId = user.id || index;
                   return (
@@ -131,13 +230,13 @@ const ServiceUsers = () => {
                       <tr className="hover:bg-white/[0.02] transition-colors group">
                         <td className="px-5 py-4 text-sm text-gray-500 font-bold">{index + 1}</td>
                         <td className="px-5 py-4">
-                          <p className="text-sm font-black text-white">{user.companyName || user.contactName || '—'}</p>
+                          <p className="text-sm font-black text-white">{user.companyName || '—'}</p>
                           <p className="text-[10px] text-gray-500 font-bold">{user.mailId || '—'}</p>
                         </td>
                         <td className="px-5 py-4 text-sm text-gray-400 font-medium">{user.location || '—'}</td>
                         <td className="px-5 py-4">
                           <span className="px-2.5 py-1 bg-primary/10 text-primary border border-primary/20 rounded-lg text-[10px] font-black tracking-wider uppercase">
-                            {user.circuitId || 'NO ID'}
+                            {user.circuitId || '—'}
                           </span>
                         </td>
                         <td className="px-5 py-4 text-sm text-gray-400 font-medium">{user.plan || '—'}</td>
@@ -162,11 +261,11 @@ const ServiceUsers = () => {
                             </div>
                             <div className="grid grid-cols-2 md:grid-cols-5 gap-8 bg-dark-card/50 p-6 rounded-2xl border border-dark-border">
                               {[
-                                { label: 'Service Category', value: user.serviceType || user.service },
+                                { label: 'Service Category', value: user.serviceType },
                                 { label: 'Billing Account', value: user.billingAccountNo },
                                 { label: 'Commission Date', value: user.dateOfCommission },
-                                { label: 'Official Designation', value: user.designation },
-                                { label: 'Full Address', value: user.address },
+                                { label: 'Installation SSA', value: user.location },
+                                { label: 'Full Site Address', value: user.address },
                               ].map((f, i) => (
                                 <div key={i}>
                                   <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">{f.label}</p>
@@ -191,7 +290,7 @@ const ServiceUsers = () => {
                         <p className="text-gray-400 font-black text-sm uppercase tracking-widest">
                           {searchTerm ? `No results for "${searchTerm}"` : `No ${decodedService} Customers`}
                         </p>
-                        <p className="text-gray-600 text-xs font-bold">Try adjusting your search or register new users.</p>
+                        <p className="text-gray-600 text-xs font-bold">No circuits currently provisioned in database.</p>
                       </div>
                     </div>
                   </td>

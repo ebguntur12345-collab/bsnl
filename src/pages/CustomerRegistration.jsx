@@ -49,39 +49,109 @@ const CustomerRegistration = () => {
     setForm(prev => ({ ...prev, [field]: e.target.value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const newEntry = {
-      id: Date.now(),
-      circle: selectedState || '—',
-      baName: selectedDistrict || '—',
-      name: form.enterpriseName,
-      mobile: form.contactNo,
-      email: form.email,
-      designation: form.designation || '—',
-      companyName: form.enterpriseName,
-      location: selectedDistrict ? `${selectedDistrict}, ${selectedState}` : selectedState || '—',
-      contactName: form.enterpriseName,
-      contactNo: form.contactNo,
-      mailId: form.email,
-      address: form.address,
-      service: selectedService,
-      plan: form.plan,
-      circuitId: form.circuitId,
-      billingAccountNo: form.billingAccountNo,
-      dateOfCommission: form.dateOfCommission,
-      registeredAt: new Date().toLocaleString(),
-      isNew: true,
-    };
+    try {
+      // 1. Insert into customers_data
+      const { data: custData, error: custError } = await supabase
+        .from('customers_data')
+        .insert([
+          {
+            company_name: form.enterpriseName || '—',
+            location: selectedDistrict ? `${selectedDistrict}, ${selectedState}` : selectedState || '—',
+            contact_name: form.enterpriseName || '—', // Since form doesn't separate contact name
+            designation: form.designation || '—',
+            contact_no: form.contactNo || '—',
+            mail_id: form.email || '—'
+          }
+        ])
+        .select();
 
-    const existing = JSON.parse(localStorage.getItem('cctRegistrations') || '[]');
-    localStorage.setItem('cctRegistrations', JSON.stringify([newEntry, ...existing]));
+      if (custError) {
+        console.error('Error saving to customers_data:', custError.message);
+        alert('Failed to register customer contact: ' + custError.message);
+        return;
+      }
 
-    setSuccess(true);
-    setTimeout(() => {
-      navigate('/contacts/customer-contacts');
-    }, 1500);
+      // 2. Identify the service table and insert technical details
+      const serviceUpper = (selectedService || '').toUpperCase();
+      let serviceError = null;
+
+      if (serviceUpper.includes('ILL') || serviceUpper.includes('LEASED LINE')) {
+        const { error } = await supabase.from('ill_data').insert([
+          {
+            lc_id: form.circuitId || '—',
+            billing_account_no: form.billingAccountNo || '—',
+            bandwidth: form.plan || '—',
+            customer_name: form.enterpriseName || '—',
+            address: form.address || '—',
+            email_address: form.email || '—',
+            phone_no: form.contactNo || '—',
+            billing_ssa: selectedDistrict || '—',
+            service_start_date: form.dateOfCommission || '—'
+          }
+        ]);
+        serviceError = error;
+      } else if (serviceUpper.includes('PRI')) {
+        const { error } = await supabase.from('pri_data').insert([
+          {
+            telephone_no: form.circuitId || '—',
+            billing_account_no: form.billingAccountNo || '—',
+            customer_name: form.enterpriseName || '—',
+            address: form.address || '—',
+            pri_plan: form.plan || '—'
+          }
+        ]);
+        serviceError = error;
+      } else if (serviceUpper.includes('SIP')) {
+        const { error } = await supabase.from('sip_data').insert([
+          {
+            telephone_no: form.circuitId || '—',
+            billing_account_no: form.billingAccountNo || '—',
+            customer_name: form.enterpriseName || '—',
+            address: form.address || '—',
+            sip_plan: form.plan || '—'
+          }
+        ]);
+        serviceError = error;
+      } else if (serviceUpper.includes('MMVC')) {
+        const { error } = await supabase.from('mmvc_data').insert([
+          {
+            telephone_no: form.circuitId || '—',
+            billing_account_no: form.billingAccountNo || '—',
+            customer_name: form.enterpriseName || '—',
+            address: form.address || '—',
+            mmv_plan: form.plan || '—'
+          }
+        ]);
+        serviceError = error;
+      } else if (serviceUpper.includes('MPLS')) {
+        const { error } = await supabase.from('mpls_data').insert([
+          {
+            telephone_no: form.circuitId || '—',
+            billing_account_no: form.billingAccountNo || '—',
+            bandwidth: form.plan || '—',
+            customer_name: form.enterpriseName || '—',
+            address: form.address || '—'
+          }
+        ]);
+        serviceError = error;
+      }
+
+      if (serviceError) {
+        console.error('Error saving technical service details:', serviceError.message);
+        alert('Customer registered, but failed to provision technical service: ' + serviceError.message);
+      }
+
+      setSuccess(true);
+      setTimeout(() => {
+        navigate('/contacts/customer-contacts');
+      }, 1500);
+    } catch (err) {
+      console.error('Exception during customer registration:', err);
+      alert('An unexpected error occurred.');
+    }
   };
 
   return (
