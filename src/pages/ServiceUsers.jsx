@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Search, Laptop, ChevronRight, ChevronDown, Info, ArrowLeft, Users, Zap, Phone, Globe, Loader2 } from 'lucide-react';
+import { Search, Laptop, ChevronRight, ChevronDown, Info, ArrowLeft, Users, Zap, Phone, Globe, Loader2, RefreshCw } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 const ServiceUsers = () => {
@@ -20,17 +20,39 @@ const ServiceUsers = () => {
       try {
         const target = decodedService.toLowerCase();
         let table = 'customers_data';
+        const isDOJ = target.includes('doj');
+        const isElection = target.includes('election');
+        const isCollector = target.includes('collector');
+        const isNHM = target.includes('nhm');
         
-        if (target.includes('ill') || target.includes('leased line')) table = 'ill_data';
+        if (isDOJ) table = 'ill_data';
+        else if (isElection) table = 'toll_free';
+        else if (isCollector) table = 'ill_data';
+        else if (isNHM) table = 'ill_data';
+        else if (target.includes('ill') || target.includes('leased line')) table = 'ill_data';
         else if (target.includes('pri')) table = 'pri_data';
         else if (target.includes('sip')) table = 'sip_data';
         else if (target.includes('mmvc')) table = 'mmvc_data';
         else if (target.includes('mpls')) table = 'mpls_data';
+        else if (target.includes('nmect')) table = 'nmect_data';
+        else if (target.includes('cggb')) table = 'cggb';
+        else if (target.includes('tobacco')) table = 'tobacco_board';
+        else if (target.includes('nregs')) table = 'nregs';
+        else if (target.includes('toll')) table = 'toll_free';
 
-        const { data, error } = await supabase
-          .from(table)
-          .select('*')
-          .order('id', { ascending: true });
+        let query = supabase.from(table).select('*');
+        
+        if (isDOJ) {
+          query = query.or('customer_name.ilike.%doj%,customer_name.ilike.%justice%,customer_name.ilike.%court%');
+        } else if (isElection) {
+          query = query.or('customer_name.ilike.%election%,customer_name.ilike.%commission%');
+        } else if (isCollector) {
+          query = query.or('customer_name.ilike.%collector%,customer_name.ilike.%collectorate%');
+        } else if (isNHM) {
+          query = query.or('customer_name.ilike.%nhm%,customer_name.ilike.%health%');
+        }
+
+        const { data, error } = await query.order('id', { ascending: true });
 
         if (error) {
           console.error(error);
@@ -39,6 +61,7 @@ const ServiceUsers = () => {
           // Map to uniform UI format
           const mapped = data.map(r => {
             if (table === 'ill_data') {
+              const displayServiceType = isDOJ ? 'DOJ' : (isCollector ? 'Collectorates' : (isNHM ? 'NHM' : 'Internet Leased Line (ILL)'));
               return {
                 id: r.id,
                 companyName: r.customer_name || '—',
@@ -50,7 +73,15 @@ const ServiceUsers = () => {
                 billingAccountNo: r.billing_account_no || '—',
                 dateOfCommission: r.service_start_date || '—',
                 address: r.address || '—',
-                serviceType: 'Internet Leased Line (ILL)'
+                serviceType: displayServiceType,
+                detailFields: [
+                  { label: 'Service Category', value: displayServiceType },
+                  { label: 'Billing Account', value: r.billing_account_no || '—' },
+                  { label: 'Commission Date', value: r.service_start_date || '—' },
+                  { label: 'Installation SSA', value: r.billing_ssa || '—' },
+                  { label: 'Last Mile', value: r.last_mile || '—' },
+                  { label: 'Full Site Address', value: r.address || '—' },
+                ]
               };
             } else if (table === 'pri_data') {
               return {
@@ -64,7 +95,14 @@ const ServiceUsers = () => {
                 billingAccountNo: r.billing_account_no || '—',
                 dateOfCommission: '—',
                 address: r.address || '—',
-                serviceType: 'ISDN PRI'
+                serviceType: 'ISDN PRI',
+                detailFields: [
+                  { label: 'Service Category', value: 'ISDN PRI' },
+                  { label: 'Billing Account', value: r.billing_account_no || '—' },
+                  { label: 'Telephone No', value: r.telephone_no || '—' },
+                  { label: 'PRI Plan', value: r.pri_plan || '—' },
+                  { label: 'Full Site Address', value: r.address || '—' },
+                ]
               };
             } else if (table === 'sip_data') {
               return {
@@ -78,7 +116,14 @@ const ServiceUsers = () => {
                 billingAccountNo: r.billing_account_no || '—',
                 dateOfCommission: '—',
                 address: r.address || '—',
-                serviceType: 'SIP Trunk'
+                serviceType: 'SIP Trunk',
+                detailFields: [
+                  { label: 'Service Category', value: 'SIP Trunk' },
+                  { label: 'Billing Account', value: r.billing_account_no || '—' },
+                  { label: 'Telephone No', value: r.telephone_no || '—' },
+                  { label: 'SIP Plan', value: r.sip_plan || '—' },
+                  { label: 'Full Site Address', value: r.address || '—' },
+                ]
               };
             } else if (table === 'mmvc_data') {
               return {
@@ -92,7 +137,14 @@ const ServiceUsers = () => {
                 billingAccountNo: r.billing_account_no || '—',
                 dateOfCommission: '—',
                 address: r.address || '—',
-                serviceType: 'MMVC'
+                serviceType: 'MMVC',
+                detailFields: [
+                  { label: 'Service Category', value: 'MMVC' },
+                  { label: 'Billing Account', value: r.billing_account_no || '—' },
+                  { label: 'Telephone No', value: r.telephone_no || '—' },
+                  { label: 'MMV Plan', value: r.mmv_plan || '—' },
+                  { label: 'Full Site Address', value: r.address || '—' },
+                ]
               };
             } else if (table === 'mpls_data') {
               return {
@@ -106,7 +158,135 @@ const ServiceUsers = () => {
                 billingAccountNo: r.billing_account_no || '—',
                 dateOfCommission: '—',
                 address: r.address || '—',
-                serviceType: 'MPLS VPN'
+                serviceType: 'MPLS VPN',
+                detailFields: [
+                  { label: 'Service Category', value: 'MPLS VPN' },
+                  { label: 'Billing Account', value: r.billing_account_no || '—' },
+                  { label: 'Telephone No', value: r.telephone_no || '—' },
+                  { label: 'Bandwidth', value: r.bandwidth || '—' },
+                  { label: 'Full Site Address', value: r.address || '—' },
+                ]
+              };
+            } else if (table === 'nmect_data') {
+              return {
+                id: r.id,
+                companyName: r.customer_name || '—',
+                mailId: '—',
+                location: '—',
+                circuitId: r.telephone_no || '—',
+                plan: r.nmect_plan || r.bandwidth || '—',
+                contactNo: r.telephone_no || '—',
+                billingAccountNo: r.billing_account_no || '—',
+                dateOfCommission: '—',
+                address: r.address || '—',
+                serviceType: 'NMECT',
+                detailFields: [
+                  { label: 'Service Category', value: 'NMECT' },
+                  { label: 'Billing Account', value: r.billing_account_no || '—' },
+                  { label: 'Telephone No', value: r.telephone_no || '—' },
+                  { label: 'Bandwidth', value: r.bandwidth || '—' },
+                  { label: 'NMECT Plan', value: r.nmect_plan || '—' },
+                  { label: 'Full Site Address', value: r.address || '—' },
+                ]
+              };
+            } else if (table === 'cggb') {
+              return {
+                id: r.id,
+                companyName: r.name || '—',
+                mailId: '—',
+                location: r.oa || '—',
+                circuitId: r.circuit_id || '—',
+                plan: r.bandwidth || '—',
+                contactNo: r.field_incharge_number || '—',
+                billingAccountNo: r.billing_account || '—',
+                dateOfCommission: '—',
+                address: '—',
+                serviceType: 'CGGB',
+                detailFields: [
+                  { label: 'Service Category', value: 'CGGB' },
+                  { label: 'Billing Account', value: r.billing_account || '—' },
+                  { label: 'Circuit ID', value: r.circuit_id || '—' },
+                  { label: 'Bandwidth', value: r.bandwidth || '—' },
+                  { label: 'WAN IP', value: r.wan_ip || '—' },
+                  { label: 'OA (Location)', value: r.oa || '—' },
+                  { label: 'Field Incharge Name', value: r.field_incharge_name || '—' },
+                  { label: 'Field Incharge Number', value: r.field_incharge_number || '—' },
+                  { label: 'PCM Incharge Number', value: r.pcm_incharge_number || '—' },
+                ]
+              };
+            } else if (table === 'tobacco_board') {
+              return {
+                id: r.id,
+                companyName: `Tobacco Board (${r.location || '—'})`,
+                mailId: '—',
+                location: r.ba_name ? `${r.ba_name} (${r.circle || '—'})` : (r.circle || '—'),
+                circuitId: r.lc_id || '—',
+                plan: r.bandwidth || '—',
+                contactNo: r.contact_no || '—',
+                billingAccountNo: r.billing_account || '—',
+                dateOfCommission: '—',
+                address: '—',
+                serviceType: 'Tobacco Board',
+                detailFields: [
+                  { label: 'Service Category', value: 'Tobacco Board' },
+                  { label: 'Billing Account', value: r.billing_account || '—' },
+                  { label: 'LC ID', value: r.lc_id || '—' },
+                  { label: 'CCT Rent Qly', value: r.cct_rent_qly || '—' },
+                  { label: 'Bandwidth', value: r.bandwidth || '—' },
+                  { label: 'Circle', value: r.circle || '—' },
+                  { label: 'BA Name', value: r.ba_name || '—' },
+                  { label: 'EB Incharge', value: r.eb_incharge || '—' },
+                  { label: 'Contact No', value: r.contact_no || '—' },
+                  { label: 'BBM Incharge', value: r.bbm_incharge || '—' },
+                  { label: 'BBM Contact', value: r.bbm_contact || '—' },
+                ]
+              };
+            } else if (table === 'nregs') {
+              return {
+                id: r.id,
+                companyName: r.computer_operator_name ? `Computer Operator: ${r.computer_operator_name}` : 'NREGS Office',
+                mailId: '—',
+                location: r.mandal ? `${r.mandal}, ${r.district || '—'}` : (r.district || '—'),
+                circuitId: r.telephone_no || '—',
+                plan: r.bbm_no ? `BBM: ${r.bbm_no}` : (r.tip_no ? `TIP: ${r.tip_no}` : '—'),
+                contactNo: r.contact_no || '—',
+                billingAccountNo: '—',
+                dateOfCommission: '—',
+                address: '—',
+                serviceType: 'NREGS',
+                detailFields: [
+                  { label: 'Service Category', value: 'NREGS' },
+                  { label: 'District', value: r.district || '—' },
+                  { label: 'Mandal', value: r.mandal || '—' },
+                  { label: 'Telephone No', value: r.telephone_no || '—' },
+                  { label: 'Computer Operator Name', value: r.computer_operator_name || '—' },
+                  { label: 'Contact No', value: r.contact_no || '—' },
+                  { label: 'DRP Contact No', value: r.drp_contact_no || '—' },
+                  { label: 'BBM No', value: r.bbm_no || '—' },
+                  { label: 'TIP No', value: r.tip_no || '—' },
+                ]
+              };
+            } else if (table === 'toll_free') {
+              const displayServiceType = isElection ? 'Election Commission' : 'Toll Free';
+              return {
+                id: r.id,
+                companyName: r.customer_name || '—',
+                mailId: '—',
+                location: '—',
+                circuitId: r.telephone_no || '—',
+                plan: '—',
+                contactNo: r.telephone_no || '—',
+                billingAccountNo: r.billing_account_no || '—',
+                dateOfCommission: '—',
+                address: r.address || '—',
+                serviceType: displayServiceType,
+                detailFields: [
+                  { label: 'Service Category', value: isElection ? 'Election Commission (Toll Free)' : 'Toll Free' },
+                  { label: 'Billing Account', value: r.billing_account_no || '—' },
+                  { label: 'Telephone No', value: r.telephone_no || '—' },
+                  { label: 'Customer Name', value: r.customer_name || '—' },
+                  { label: 'Full Site Address', value: r.address || '—' },
+                ]
               };
             } else {
               return {
@@ -120,7 +300,16 @@ const ServiceUsers = () => {
                 billingAccountNo: '—',
                 dateOfCommission: '—',
                 address: '—',
-                serviceType: 'General'
+                serviceType: 'General',
+                detailFields: [
+                  { label: 'Service Category', value: 'General' },
+                  { label: 'Company Name', value: r.company_name || '—' },
+                  { label: 'Email ID', value: r.mail_id || '—' },
+                  { label: 'Location', value: r.location || '—' },
+                  { label: 'Contact Name', value: r.contact_name || '—' },
+                  { label: 'Designation', value: r.designation || '—' },
+                  { label: 'Contact No', value: r.contact_no || '—' },
+                ]
               };
             }
           });
@@ -149,9 +338,11 @@ const ServiceUsers = () => {
 
   const getIcon = () => {
     const t = decodedService.toLowerCase();
-    if (t.includes('ill')) return <Zap size={24} className="text-white" />;
+    if (t.includes('ill') || t.includes('doj') || t.includes('collector') || t.includes('nhm')) return <Zap size={24} className="text-white" />;
     if (t.includes('mpls')) return <Globe size={24} className="text-white" />;
-    if (t.includes('sip') || t.includes('pri')) return <Phone size={24} className="text-white" />;
+    if (t.includes('sip') || t.includes('pri') || t.includes('toll') || t.includes('election')) return <Phone size={24} className="text-white" />;
+    if (t.includes('nregs')) return <RefreshCw size={24} className="text-white" />;
+    if (t.includes('cggb')) return <Users size={24} className="text-white" />;
     return <Laptop size={24} className="text-white" />;
   };
 
@@ -259,17 +450,17 @@ const ServiceUsers = () => {
                               <Info size={14} className="text-primary" />
                               <h4 className="font-black text-primary text-[10px] uppercase tracking-[0.2em]">Full Circuit Specifications</h4>
                             </div>
-                            <div className="grid grid-cols-2 md:grid-cols-5 gap-8 bg-dark-card/50 p-6 rounded-2xl border border-dark-border">
-                              {[
+                            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 bg-dark-card/50 p-6 rounded-2xl border border-dark-border">
+                              {(user.detailFields || [
                                 { label: 'Service Category', value: user.serviceType },
                                 { label: 'Billing Account', value: user.billingAccountNo },
                                 { label: 'Commission Date', value: user.dateOfCommission },
                                 { label: 'Installation SSA', value: user.location },
                                 { label: 'Full Site Address', value: user.address },
-                              ].map((f, i) => (
-                                <div key={i}>
+                              ]).map((f, i) => (
+                                <div key={i} className="min-w-0">
                                   <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">{f.label}</p>
-                                  <p className="text-xs font-bold text-white leading-relaxed">{f.value || 'N/A'}</p>
+                                  <p className="text-xs font-bold text-white leading-relaxed break-words">{f.value || '—'}</p>
                                 </div>
                               ))}
                             </div>
