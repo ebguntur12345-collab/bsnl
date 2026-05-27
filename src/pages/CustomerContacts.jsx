@@ -371,20 +371,51 @@ const CustomerContacts = () => {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this customer?')) return;
+  const handleDelete = async (contact) => {
+    if (!window.confirm(`Are you sure you want to delete this customer (${contact.companyName})?` + 
+      '\nThis will also delete their matching technical service details (ILL, MPLS, PRI, MMVC, SIP) if any.')) return;
     try {
-      const { error } = await supabase
+      const nameClean = (contact.companyName || '').trim();
+      const contactNoClean = (contact.contactNo || '').trim();
+
+      // 1. Delete from customers_data
+      const { error: custError } = await supabase
         .from('customers_data')
         .delete()
-        .eq('id', id);
+        .eq('id', contact.id);
 
-      if (error) {
-        console.error('Error deleting contact:', error.message);
-        alert('Failed to delete contact: ' + error.message);
-      } else {
-        loadContacts();
+      if (custError) {
+        console.error('Error deleting contact:', custError.message);
+        alert('Failed to delete contact: ' + custError.message);
+        return;
       }
+
+      // 2. Cascade delete from service tables matching strictly
+      if (nameClean && nameClean !== '—') {
+        let illOr = `customer_name.ilike.${nameClean}`;
+        if (contactNoClean && contactNoClean !== '—') {
+          illOr += `,phone_no.eq.${contactNoClean}`;
+        }
+        await supabase.from('ill_data').delete().or(illOr);
+
+        let otherOr = `customer_name.ilike.${nameClean}`;
+        if (contactNoClean && contactNoClean !== '—') {
+          otherOr += `,telephone_no.eq.${contactNoClean}`;
+        }
+
+        await supabase.from('pri_data').delete().or(otherOr);
+        await supabase.from('sip_data').delete().or(otherOr);
+        await supabase.from('mmvc_data').delete().or(otherOr);
+        await supabase.from('mpls_data').delete().or(otherOr);
+      } else if (contactNoClean && contactNoClean !== '—') {
+        await supabase.from('ill_data').delete().eq('phone_no', contactNoClean);
+        await supabase.from('pri_data').delete().eq('telephone_no', contactNoClean);
+        await supabase.from('sip_data').delete().eq('telephone_no', contactNoClean);
+        await supabase.from('mmvc_data').delete().eq('telephone_no', contactNoClean);
+        await supabase.from('mpls_data').delete().eq('telephone_no', contactNoClean);
+      }
+
+      loadContacts();
     } catch (err) {
       console.error(err);
     }
@@ -541,7 +572,7 @@ const CustomerContacts = () => {
                       <td className="px-6 py-4 text-sm text-gray-300 truncate max-w-[200px]">{item.mailId}</td>
                       <td className="px-6 py-4 text-sm">
                         <button
-                          onClick={() => handleDelete(item.id)}
+                          onClick={() => handleDelete(item)}
                           className="p-1.5 text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors"
                           title="Delete contact"
                         >
