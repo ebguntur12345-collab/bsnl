@@ -91,6 +91,113 @@ const CustomerContacts = () => {
         const nameClean = row.companyName.trim();
         const contactNoClean = row.contactNo.trim();
 
+        // 1. Try EXACT Name Match first across all tables to avoid incorrect phone-only matches
+        let foundDetails = null;
+
+        if (nameClean) {
+          // A. Try ILL exact name match
+          const { data: illExact } = await supabase
+            .from('ill_data')
+            .select('*')
+            .ilike('customer_name', nameClean)
+            .limit(1);
+          if (illExact && illExact.length > 0) {
+            foundDetails = {
+              service: 'Internet Leased Line (ILL)',
+              plan: illExact[0].bandwidth || '—',
+              circuitId: illExact[0].lc_id || '—',
+              billingAccountNo: illExact[0].billing_account_no || '—',
+              dateOfCommission: illExact[0].service_start_date || '—',
+              address: illExact[0].address || '—'
+            };
+          }
+
+          // B. Try PRI exact name match
+          if (!foundDetails) {
+            const { data: priExact } = await supabase
+              .from('pri_data')
+              .select('*')
+              .ilike('customer_name', nameClean)
+              .limit(1);
+            if (priExact && priExact.length > 0) {
+              foundDetails = {
+                service: 'PRI Data',
+                plan: priExact[0].pri_plan || '—',
+                circuitId: priExact[0].telephone_no || '—',
+                billingAccountNo: priExact[0].billing_account_no || '—',
+                dateOfCommission: '—',
+                address: priExact[0].address || '—'
+              };
+            }
+          }
+
+          // C. Try SIP exact name match
+          if (!foundDetails) {
+            const { data: sipExact } = await supabase
+              .from('sip_data')
+              .select('*')
+              .ilike('customer_name', nameClean)
+              .limit(1);
+            if (sipExact && sipExact.length > 0) {
+              foundDetails = {
+                service: 'SIP Data',
+                plan: sipExact[0].sip_plan || '—',
+                circuitId: sipExact[0].telephone_no || '—',
+                billingAccountNo: sipExact[0].billing_account_no || '—',
+                dateOfCommission: '—',
+                address: sipExact[0].address || '—'
+              };
+            }
+          }
+
+          // D. Try MMVC exact name match
+          if (!foundDetails) {
+            const { data: mmvcExact } = await supabase
+              .from('mmvc_data')
+              .select('*')
+              .ilike('customer_name', nameClean)
+              .limit(1);
+            if (mmvcExact && mmvcExact.length > 0) {
+              foundDetails = {
+                service: 'MMVC Data',
+                plan: mmvcExact[0].mmv_plan || '—',
+                circuitId: mmvcExact[0].telephone_no || '—',
+                billingAccountNo: mmvcExact[0].billing_account_no || '—',
+                dateOfCommission: '—',
+                address: mmvcExact[0].address || '—'
+              };
+            }
+          }
+
+          // E. Try MPLS exact name match
+          if (!foundDetails) {
+            const { data: mplsExact } = await supabase
+              .from('mpls_data')
+              .select('*')
+              .ilike('customer_name', nameClean)
+              .limit(1);
+            if (mplsExact && mplsExact.length > 0) {
+              foundDetails = {
+                service: 'MPLS Data',
+                plan: mplsExact[0].bandwidth || '—',
+                circuitId: mplsExact[0].telephone_no || '—',
+                billingAccountNo: mplsExact[0].billing_account_no || '—',
+                dateOfCommission: '—',
+                address: mplsExact[0].address || '—'
+              };
+            }
+          }
+        }
+
+        if (foundDetails) {
+          setExpandedDetails(prev => ({
+            ...prev,
+            [rowId]: foundDetails
+          }));
+          return;
+        }
+
+        // 2. If no exact name match, fallback to the original loose .or() queries
         // 1. Try ILL
         let { data: ill } = await supabase
           .from('ill_data')
