@@ -33,6 +33,7 @@ const CustomerRegistration = () => {
     circuitId: '',
     billingAccountNo: '',
     dateOfCommission: '',
+    wanIp: '',
   });
 
   const [selectedState, setSelectedState]       = useState('');
@@ -78,6 +79,10 @@ const CustomerRegistration = () => {
       const serviceUpper = (selectedService || '').toUpperCase();
       let serviceError = null;
 
+      const finalAddress = form.wanIp
+        ? `${form.address || '—'} (WAN IP: ${form.wanIp})`
+        : (form.address || '—');
+
       if (serviceUpper.includes('ILL') || serviceUpper.includes('LEASED LINE')) {
         const { error } = await supabase.from('ill_data').insert([
           {
@@ -85,7 +90,7 @@ const CustomerRegistration = () => {
             billing_account_no: form.billingAccountNo || '—',
             bandwidth: form.plan || '—',
             customer_name: form.enterpriseName || '—',
-            address: form.address || '—',
+            address: finalAddress,
             email_address: form.email || '—',
             phone_no: form.contactNo || '—',
             billing_ssa: selectedDistrict || '—',
@@ -99,7 +104,7 @@ const CustomerRegistration = () => {
             telephone_no: form.circuitId || '—',
             billing_account_no: form.billingAccountNo || '—',
             customer_name: form.enterpriseName || '—',
-            address: form.address || '—',
+            address: finalAddress,
             pri_plan: form.plan || '—'
           }
         ]);
@@ -110,7 +115,7 @@ const CustomerRegistration = () => {
             telephone_no: form.circuitId || '—',
             billing_account_no: form.billingAccountNo || '—',
             customer_name: form.enterpriseName || '—',
-            address: form.address || '—',
+            address: finalAddress,
             sip_plan: form.plan || '—'
           }
         ]);
@@ -121,7 +126,7 @@ const CustomerRegistration = () => {
             telephone_no: form.circuitId || '—',
             billing_account_no: form.billingAccountNo || '—',
             customer_name: form.enterpriseName || '—',
-            address: form.address || '—',
+            address: finalAddress,
             mmv_plan: form.plan || '—'
           }
         ]);
@@ -133,7 +138,7 @@ const CustomerRegistration = () => {
             billing_account_no: form.billingAccountNo || '—',
             bandwidth: form.plan || '—',
             customer_name: form.enterpriseName || '—',
-            address: form.address || '—'
+            address: finalAddress
           }
         ]);
         serviceError = error;
@@ -321,6 +326,17 @@ const CustomerRegistration = () => {
                 value={form.billingAccountNo}
                 onChange={handleChange('billingAccountNo')}
                 placeholder="Ex: 8000123456"
+                className="w-full px-5 py-3.5 bg-dark-bg border border-dark-border rounded-xl text-sm text-white outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-gray-700"
+              />
+            </div>
+
+            <div className="flex flex-col space-y-2.5">
+              <label className="text-[10px] font-black text-primary uppercase tracking-[0.2em] ml-1">WAN IP Address</label>
+              <input
+                type="text"
+                value={form.wanIp}
+                onChange={handleChange('wanIp')}
+                placeholder="Ex: 10.245.12.89 or 117.211.X.X"
                 className="w-full px-5 py-3.5 bg-dark-bg border border-dark-border rounded-xl text-sm text-white outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-gray-700"
               />
             </div>

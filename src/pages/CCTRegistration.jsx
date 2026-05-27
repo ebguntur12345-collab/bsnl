@@ -106,7 +106,8 @@ const CCTRegistration = () => {
           name: form.primaryContactName || form.enterpriseName || '—',
           mobile: form.contactNo || '—',
           mail_id: form.email || '—',
-          ba_name: selectedDistrict || '—'
+          ba_name: selectedDistrict || '—',
+          service_type: form.serviceType || '—'
         }
       ]);
 

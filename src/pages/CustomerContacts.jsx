@@ -79,6 +79,17 @@ const CustomerContacts = () => {
     loadContacts();
   }, []);
 
+  const parseAddressAndIP = (fullAddress) => {
+    if (!fullAddress) return { address: '—', wanIp: '—' };
+    const ipMatch = fullAddress.match(/\(WAN IP:\s*([^\)]+)\)/i);
+    if (ipMatch) {
+      const wanIp = ipMatch[1].trim();
+      const cleanAddress = fullAddress.replace(/\s*\(WAN IP:\s*[^\)]+\)/i, '').trim();
+      return { address: cleanAddress || '—', wanIp };
+    }
+    return { address: fullAddress, wanIp: '—' };
+  };
+
   const toggleRow = async (row) => {
     const rowId = row.id;
     const isExpanding = !expandedRows[rowId];
@@ -102,13 +113,15 @@ const CustomerContacts = () => {
             .ilike('customer_name', nameClean)
             .limit(1);
           if (illExact && illExact.length > 0) {
+            const { address: cleanAddr, wanIp } = parseAddressAndIP(illExact[0].address);
             foundDetails = {
               service: 'Internet Leased Line (ILL)',
               plan: illExact[0].bandwidth || '—',
               circuitId: illExact[0].lc_id || '—',
               billingAccountNo: illExact[0].billing_account_no || '—',
               dateOfCommission: illExact[0].service_start_date || '—',
-              address: illExact[0].address || '—'
+              address: cleanAddr,
+              wanIp
             };
           }
 
@@ -120,13 +133,15 @@ const CustomerContacts = () => {
               .ilike('customer_name', nameClean)
               .limit(1);
             if (priExact && priExact.length > 0) {
+              const { address: cleanAddr, wanIp } = parseAddressAndIP(priExact[0].address);
               foundDetails = {
                 service: 'PRI Data',
                 plan: priExact[0].pri_plan || '—',
                 circuitId: priExact[0].telephone_no || '—',
                 billingAccountNo: priExact[0].billing_account_no || '—',
                 dateOfCommission: '—',
-                address: priExact[0].address || '—'
+                address: cleanAddr,
+                wanIp
               };
             }
           }
@@ -139,13 +154,15 @@ const CustomerContacts = () => {
               .ilike('customer_name', nameClean)
               .limit(1);
             if (sipExact && sipExact.length > 0) {
+              const { address: cleanAddr, wanIp } = parseAddressAndIP(sipExact[0].address);
               foundDetails = {
                 service: 'SIP Data',
                 plan: sipExact[0].sip_plan || '—',
                 circuitId: sipExact[0].telephone_no || '—',
                 billingAccountNo: sipExact[0].billing_account_no || '—',
                 dateOfCommission: '—',
-                address: sipExact[0].address || '—'
+                address: cleanAddr,
+                wanIp
               };
             }
           }
@@ -158,13 +175,15 @@ const CustomerContacts = () => {
               .ilike('customer_name', nameClean)
               .limit(1);
             if (mmvcExact && mmvcExact.length > 0) {
+              const { address: cleanAddr, wanIp } = parseAddressAndIP(mmvcExact[0].address);
               foundDetails = {
                 service: 'MMVC Data',
                 plan: mmvcExact[0].mmv_plan || '—',
                 circuitId: mmvcExact[0].telephone_no || '—',
                 billingAccountNo: mmvcExact[0].billing_account_no || '—',
                 dateOfCommission: '—',
-                address: mmvcExact[0].address || '—'
+                address: cleanAddr,
+                wanIp
               };
             }
           }
@@ -177,13 +196,15 @@ const CustomerContacts = () => {
               .ilike('customer_name', nameClean)
               .limit(1);
             if (mplsExact && mplsExact.length > 0) {
+              const { address: cleanAddr, wanIp } = parseAddressAndIP(mplsExact[0].address);
               foundDetails = {
                 service: 'MPLS Data',
                 plan: mplsExact[0].bandwidth || '—',
                 circuitId: mplsExact[0].telephone_no || '—',
                 billingAccountNo: mplsExact[0].billing_account_no || '—',
                 dateOfCommission: '—',
-                address: mplsExact[0].address || '—'
+                address: cleanAddr,
+                wanIp
               };
             }
           }
@@ -206,6 +227,7 @@ const CustomerContacts = () => {
           .limit(1);
 
         if (ill && ill.length > 0) {
+          const { address: cleanAddr, wanIp } = parseAddressAndIP(ill[0].address);
           setExpandedDetails(prev => ({
             ...prev,
             [rowId]: {
@@ -214,7 +236,8 @@ const CustomerContacts = () => {
               circuitId: ill[0].lc_id || '—',
               billingAccountNo: ill[0].billing_account_no || '—',
               dateOfCommission: ill[0].service_start_date || '—',
-              address: ill[0].address || '—'
+              address: cleanAddr,
+              wanIp
             }
           }));
           return;
@@ -228,6 +251,7 @@ const CustomerContacts = () => {
           .limit(1);
 
         if (pri && pri.length > 0) {
+          const { address: cleanAddr, wanIp } = parseAddressAndIP(pri[0].address);
           setExpandedDetails(prev => ({
             ...prev,
             [rowId]: {
@@ -236,7 +260,8 @@ const CustomerContacts = () => {
               circuitId: pri[0].telephone_no || '—',
               billingAccountNo: pri[0].billing_account_no || '—',
               dateOfCommission: '—',
-              address: pri[0].address || '—'
+              address: cleanAddr,
+              wanIp
             }
           }));
           return;
@@ -250,6 +275,7 @@ const CustomerContacts = () => {
           .limit(1);
 
         if (sip && sip.length > 0) {
+          const { address: cleanAddr, wanIp } = parseAddressAndIP(sip[0].address);
           setExpandedDetails(prev => ({
             ...prev,
             [rowId]: {
@@ -258,7 +284,8 @@ const CustomerContacts = () => {
               circuitId: sip[0].telephone_no || '—',
               billingAccountNo: sip[0].billing_account_no || '—',
               dateOfCommission: '—',
-              address: sip[0].address || '—'
+              address: cleanAddr,
+              wanIp
             }
           }));
           return;
@@ -272,6 +299,7 @@ const CustomerContacts = () => {
           .limit(1);
 
         if (mmvc && mmvc.length > 0) {
+          const { address: cleanAddr, wanIp } = parseAddressAndIP(mmvc[0].address);
           setExpandedDetails(prev => ({
             ...prev,
             [rowId]: {
@@ -280,7 +308,8 @@ const CustomerContacts = () => {
               circuitId: mmvc[0].telephone_no || '—',
               billingAccountNo: mmvc[0].billing_account_no || '—',
               dateOfCommission: '—',
-              address: mmvc[0].address || '—'
+              address: cleanAddr,
+              wanIp
             }
           }));
           return;
@@ -294,6 +323,7 @@ const CustomerContacts = () => {
           .limit(1);
 
         if (mpls && mpls.length > 0) {
+          const { address: cleanAddr, wanIp } = parseAddressAndIP(mpls[0].address);
           setExpandedDetails(prev => ({
             ...prev,
             [rowId]: {
@@ -302,7 +332,8 @@ const CustomerContacts = () => {
               circuitId: mpls[0].telephone_no || '—',
               billingAccountNo: mpls[0].billing_account_no || '—',
               dateOfCommission: '—',
-              address: mpls[0].address || '—'
+              address: cleanAddr,
+              wanIp
             }
           }));
           return;

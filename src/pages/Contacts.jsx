@@ -350,12 +350,13 @@ const Contacts = () => {
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 bg-dark-card p-6 rounded-2xl border border-dark-border shadow-inner">
                               {[
-                                { label: 'Circle',      value: row.circle },
-                                { label: 'Designation', value: row.designation },
-                                { label: 'Name',        value: row.name },
-                                { label: 'Mobile',      value: row.mobile },
-                                { label: 'Mail ID',     value: row.mail_id },
-                                { label: 'BA Name',     value: row.ba_name },
+                                { label: 'Circle',       value: row.circle },
+                                { label: 'Designation',  value: row.designation },
+                                { label: 'Name',         value: row.name },
+                                { label: 'Mobile',       value: row.mobile },
+                                { label: 'Mail ID',      value: row.mail_id },
+                                { label: 'BA Name',      value: row.ba_name },
+                                { label: 'Service Type', value: row.service_type },
                               ].map((f, fi) => (
                                 <div key={fi}>
                                   <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-1">{f.label}</p>
