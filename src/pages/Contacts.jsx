@@ -34,10 +34,12 @@ const Contacts = () => {
       "#": index + 1,
       "Circle": row.circle || '—',
       "Designation": row.designation || '—',
+      "Enterprise Name": row.enterprise_name || '—',
       "Name": row.name || '—',
       "Mobile": row.mobile || '—',
       "Mail ID": row.mail_id || '—',
       "BA Name": row.ba_name || '—',
+      "Service Type": row.service_type || '—',
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(exportData);

@@ -13,20 +13,96 @@ const CustomerContacts = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 10;
 
-  const downloadExcel = () => {
+  const parseAddressForExport = (fullAddress) => {
+    if (!fullAddress) return { address: '—', wanIp: '—', dateOfCommission: '—' };
+    let cleanAddress = fullAddress;
+    let wanIp = '—';
+    let dateOfCommission = '—';
+    const ipMatch = cleanAddress.match(/\(WAN IP:\s*([^\)]+)\)/i);
+    if (ipMatch) { wanIp = ipMatch[1].trim(); cleanAddress = cleanAddress.replace(/\s*\(WAN IP:\s*[^\)]+\)/i, '').trim(); }
+    const docMatch = cleanAddress.match(/\(DOC:\s*([^\)]+)\)/i);
+    if (docMatch) { dateOfCommission = docMatch[1].trim(); cleanAddress = cleanAddress.replace(/\s*\(DOC:\s*[^\)]+\)/i, '').trim(); }
+    return { address: cleanAddress || '—', wanIp, dateOfCommission };
+  };
+
+  const downloadExcel = async () => {
     if (filtered.length === 0) {
       alert("No contacts available to export");
       return;
     }
-    const exportData = filtered.map((row, index) => ({
-      "#": index + 1,
-      "Company Name": row.companyName || '—',
-      "Location": row.location || '—',
-      "Contact Name": row.contactName || '—',
-      "Designation": row.designation || '—',
-      "Contact No": row.contactNo || '—',
-      "Mail ID": row.mailId || '—',
-    }));
+
+    // Fetch all service tables in parallel to resolve technical details
+    const [illRes, priRes, sipRes, mmvcRes, mplsRes] = await Promise.all([
+      supabase.from('ill_data').select('*'),
+      supabase.from('pri_data').select('*'),
+      supabase.from('sip_data').select('*'),
+      supabase.from('mmvc_data').select('*'),
+      supabase.from('mpls_data').select('*'),
+    ]);
+
+    const illData  = illRes.data  || [];
+    const priData  = priRes.data  || [];
+    const sipData  = sipRes.data  || [];
+    const mmvcData = mmvcRes.data || [];
+    const mplsData = mplsRes.data || [];
+
+    const exportData = filtered.map((row, index) => {
+      const nameClean = (row.companyName || '').trim().toLowerCase();
+
+      let serviceType = '—', plan = '—', circuitId = '—', billingAccountNo = '—';
+      let address = '—', wanIp = '—', dateOfCommission = '—';
+
+      // Resolve service details by matching company name
+      const illMatch  = illData.find(d  => (d.customer_name  || '').trim().toLowerCase() === nameClean);
+      const priMatch  = priData.find(d  => (d.customer_name  || '').trim().toLowerCase() === nameClean);
+      const sipMatch  = sipData.find(d  => (d.customer_name  || '').trim().toLowerCase() === nameClean);
+      const mmvcMatch = mmvcData.find(d => (d.customer_name  || '').trim().toLowerCase() === nameClean);
+      const mplsMatch = mplsData.find(d => (d.customer_name  || '').trim().toLowerCase() === nameClean);
+
+      if (illMatch) {
+        const parsed = parseAddressForExport(illMatch.address);
+        serviceType = 'Internet Leased Line (ILL)';
+        plan = illMatch.bandwidth || '—';
+        circuitId = illMatch.lc_id || '—';
+        billingAccountNo = illMatch.billing_account_no || '—';
+        dateOfCommission = (illMatch.service_start_date && illMatch.service_start_date !== 'NULL') ? illMatch.service_start_date : parsed.dateOfCommission;
+        address = parsed.address;
+        wanIp = parsed.wanIp;
+      } else if (priMatch) {
+        const parsed = parseAddressForExport(priMatch.address);
+        serviceType = 'PRI Data'; plan = priMatch.pri_plan || '—'; circuitId = priMatch.telephone_no || '—';
+        billingAccountNo = priMatch.billing_account_no || '—'; address = parsed.address; wanIp = parsed.wanIp; dateOfCommission = parsed.dateOfCommission;
+      } else if (sipMatch) {
+        const parsed = parseAddressForExport(sipMatch.address);
+        serviceType = 'SIP Data'; plan = sipMatch.sip_plan || '—'; circuitId = sipMatch.telephone_no || '—';
+        billingAccountNo = sipMatch.billing_account_no || '—'; address = parsed.address; wanIp = parsed.wanIp; dateOfCommission = parsed.dateOfCommission;
+      } else if (mmvcMatch) {
+        const parsed = parseAddressForExport(mmvcMatch.address);
+        serviceType = 'MMVC Data'; plan = mmvcMatch.mmv_plan || '—'; circuitId = mmvcMatch.telephone_no || '—';
+        billingAccountNo = mmvcMatch.billing_account_no || '—'; address = parsed.address; wanIp = parsed.wanIp; dateOfCommission = parsed.dateOfCommission;
+      } else if (mplsMatch) {
+        const parsed = parseAddressForExport(mplsMatch.address);
+        serviceType = 'MPLS Data'; plan = mplsMatch.bandwidth || '—'; circuitId = mplsMatch.telephone_no || '—';
+        billingAccountNo = mplsMatch.billing_account_no || '—'; address = parsed.address; wanIp = parsed.wanIp; dateOfCommission = parsed.dateOfCommission;
+      }
+
+      return {
+        "#": index + 1,
+        "Company Name": row.companyName || '—',
+        "Location": row.location || '—',
+        "Contact Name": row.contactName || '—',
+        "Designation": row.designation || '—',
+        "Contact No": row.contactNo || '—',
+        "Mail ID": row.mailId || '—',
+        "Service Type": serviceType,
+        "Bandwidth / Plan": plan,
+        "Circuit ID": circuitId,
+        "Billing Account No": billingAccountNo,
+        "Date of Commission": dateOfCommission,
+        "Installation Address": address,
+        "WAN IP Address": wanIp,
+      };
+    });
 
     const worksheet = XLSX.utils.json_to_sheet(exportData);
     const workbook = XLSX.utils.book_new();
