@@ -80,14 +80,25 @@ const CustomerContacts = () => {
   }, []);
 
   const parseAddressAndIP = (fullAddress) => {
-    if (!fullAddress) return { address: '—', wanIp: '—' };
-    const ipMatch = fullAddress.match(/\(WAN IP:\s*([^\)]+)\)/i);
+    if (!fullAddress) return { address: '—', wanIp: '—', dateOfCommission: '—' };
+    
+    let cleanAddress = fullAddress;
+    let wanIp = '—';
+    let dateOfCommission = '—';
+
+    const ipMatch = cleanAddress.match(/\(WAN IP:\s*([^\)]+)\)/i);
     if (ipMatch) {
-      const wanIp = ipMatch[1].trim();
-      const cleanAddress = fullAddress.replace(/\s*\(WAN IP:\s*[^\)]+\)/i, '').trim();
-      return { address: cleanAddress || '—', wanIp };
+      wanIp = ipMatch[1].trim();
+      cleanAddress = cleanAddress.replace(/\s*\(WAN IP:\s*[^\)]+\)/i, '').trim();
     }
-    return { address: fullAddress, wanIp: '—' };
+
+    const docMatch = cleanAddress.match(/\(DOC:\s*([^\)]+)\)/i);
+    if (docMatch) {
+      dateOfCommission = docMatch[1].trim();
+      cleanAddress = cleanAddress.replace(/\s*\(DOC:\s*[^\)]+\)/i, '').trim();
+    }
+
+    return { address: cleanAddress || '—', wanIp, dateOfCommission };
   };
 
   const toggleRow = async (row) => {
@@ -113,13 +124,13 @@ const CustomerContacts = () => {
             .ilike('customer_name', nameClean)
             .limit(1);
           if (illExact && illExact.length > 0) {
-            const { address: cleanAddr, wanIp } = parseAddressAndIP(illExact[0].address);
+            const { address: cleanAddr, wanIp, dateOfCommission } = parseAddressAndIP(illExact[0].address);
             foundDetails = {
               service: 'Internet Leased Line (ILL)',
               plan: illExact[0].bandwidth || '—',
               circuitId: illExact[0].lc_id || '—',
               billingAccountNo: illExact[0].billing_account_no || '—',
-              dateOfCommission: illExact[0].service_start_date || '—',
+              dateOfCommission: (illExact[0].service_start_date && illExact[0].service_start_date !== 'NULL') ? illExact[0].service_start_date : dateOfCommission,
               address: cleanAddr,
               wanIp
             };
@@ -133,13 +144,13 @@ const CustomerContacts = () => {
               .ilike('customer_name', nameClean)
               .limit(1);
             if (priExact && priExact.length > 0) {
-              const { address: cleanAddr, wanIp } = parseAddressAndIP(priExact[0].address);
+              const { address: cleanAddr, wanIp, dateOfCommission } = parseAddressAndIP(priExact[0].address);
               foundDetails = {
                 service: 'PRI Data',
                 plan: priExact[0].pri_plan || '—',
                 circuitId: priExact[0].telephone_no || '—',
                 billingAccountNo: priExact[0].billing_account_no || '—',
-                dateOfCommission: '—',
+                dateOfCommission,
                 address: cleanAddr,
                 wanIp
               };
@@ -154,13 +165,13 @@ const CustomerContacts = () => {
               .ilike('customer_name', nameClean)
               .limit(1);
             if (sipExact && sipExact.length > 0) {
-              const { address: cleanAddr, wanIp } = parseAddressAndIP(sipExact[0].address);
+              const { address: cleanAddr, wanIp, dateOfCommission } = parseAddressAndIP(sipExact[0].address);
               foundDetails = {
                 service: 'SIP Data',
                 plan: sipExact[0].sip_plan || '—',
                 circuitId: sipExact[0].telephone_no || '—',
                 billingAccountNo: sipExact[0].billing_account_no || '—',
-                dateOfCommission: '—',
+                dateOfCommission,
                 address: cleanAddr,
                 wanIp
               };
@@ -175,13 +186,13 @@ const CustomerContacts = () => {
               .ilike('customer_name', nameClean)
               .limit(1);
             if (mmvcExact && mmvcExact.length > 0) {
-              const { address: cleanAddr, wanIp } = parseAddressAndIP(mmvcExact[0].address);
+              const { address: cleanAddr, wanIp, dateOfCommission } = parseAddressAndIP(mmvcExact[0].address);
               foundDetails = {
                 service: 'MMVC Data',
                 plan: mmvcExact[0].mmv_plan || '—',
                 circuitId: mmvcExact[0].telephone_no || '—',
                 billingAccountNo: mmvcExact[0].billing_account_no || '—',
-                dateOfCommission: '—',
+                dateOfCommission,
                 address: cleanAddr,
                 wanIp
               };
@@ -196,13 +207,13 @@ const CustomerContacts = () => {
               .ilike('customer_name', nameClean)
               .limit(1);
             if (mplsExact && mplsExact.length > 0) {
-              const { address: cleanAddr, wanIp } = parseAddressAndIP(mplsExact[0].address);
+              const { address: cleanAddr, wanIp, dateOfCommission } = parseAddressAndIP(mplsExact[0].address);
               foundDetails = {
                 service: 'MPLS Data',
                 plan: mplsExact[0].bandwidth || '—',
                 circuitId: mplsExact[0].telephone_no || '—',
                 billingAccountNo: mplsExact[0].billing_account_no || '—',
-                dateOfCommission: '—',
+                dateOfCommission,
                 address: cleanAddr,
                 wanIp
               };
@@ -227,7 +238,7 @@ const CustomerContacts = () => {
           .limit(1);
 
         if (ill && ill.length > 0) {
-          const { address: cleanAddr, wanIp } = parseAddressAndIP(ill[0].address);
+          const { address: cleanAddr, wanIp, dateOfCommission } = parseAddressAndIP(ill[0].address);
           setExpandedDetails(prev => ({
             ...prev,
             [rowId]: {
@@ -235,7 +246,7 @@ const CustomerContacts = () => {
               plan: ill[0].bandwidth || '—',
               circuitId: ill[0].lc_id || '—',
               billingAccountNo: ill[0].billing_account_no || '—',
-              dateOfCommission: ill[0].service_start_date || '—',
+              dateOfCommission: (ill[0].service_start_date && ill[0].service_start_date !== 'NULL') ? ill[0].service_start_date : dateOfCommission,
               address: cleanAddr,
               wanIp
             }
@@ -251,7 +262,7 @@ const CustomerContacts = () => {
           .limit(1);
 
         if (pri && pri.length > 0) {
-          const { address: cleanAddr, wanIp } = parseAddressAndIP(pri[0].address);
+          const { address: cleanAddr, wanIp, dateOfCommission } = parseAddressAndIP(pri[0].address);
           setExpandedDetails(prev => ({
             ...prev,
             [rowId]: {
@@ -259,7 +270,7 @@ const CustomerContacts = () => {
               plan: pri[0].pri_plan || '—',
               circuitId: pri[0].telephone_no || '—',
               billingAccountNo: pri[0].billing_account_no || '—',
-              dateOfCommission: '—',
+              dateOfCommission,
               address: cleanAddr,
               wanIp
             }
@@ -275,7 +286,7 @@ const CustomerContacts = () => {
           .limit(1);
 
         if (sip && sip.length > 0) {
-          const { address: cleanAddr, wanIp } = parseAddressAndIP(sip[0].address);
+          const { address: cleanAddr, wanIp, dateOfCommission } = parseAddressAndIP(sip[0].address);
           setExpandedDetails(prev => ({
             ...prev,
             [rowId]: {
@@ -283,7 +294,7 @@ const CustomerContacts = () => {
               plan: sip[0].sip_plan || '—',
               circuitId: sip[0].telephone_no || '—',
               billingAccountNo: sip[0].billing_account_no || '—',
-              dateOfCommission: '—',
+              dateOfCommission,
               address: cleanAddr,
               wanIp
             }
@@ -299,7 +310,7 @@ const CustomerContacts = () => {
           .limit(1);
 
         if (mmvc && mmvc.length > 0) {
-          const { address: cleanAddr, wanIp } = parseAddressAndIP(mmvc[0].address);
+          const { address: cleanAddr, wanIp, dateOfCommission } = parseAddressAndIP(mmvc[0].address);
           setExpandedDetails(prev => ({
             ...prev,
             [rowId]: {
@@ -307,7 +318,7 @@ const CustomerContacts = () => {
               plan: mmvc[0].mmv_plan || '—',
               circuitId: mmvc[0].telephone_no || '—',
               billingAccountNo: mmvc[0].billing_account_no || '—',
-              dateOfCommission: '—',
+              dateOfCommission,
               address: cleanAddr,
               wanIp
             }
@@ -323,7 +334,7 @@ const CustomerContacts = () => {
           .limit(1);
 
         if (mpls && mpls.length > 0) {
-          const { address: cleanAddr, wanIp } = parseAddressAndIP(mpls[0].address);
+          const { address: cleanAddr, wanIp, dateOfCommission } = parseAddressAndIP(mpls[0].address);
           setExpandedDetails(prev => ({
             ...prev,
             [rowId]: {
@@ -331,7 +342,7 @@ const CustomerContacts = () => {
               plan: mpls[0].bandwidth || '—',
               circuitId: mpls[0].telephone_no || '—',
               billingAccountNo: mpls[0].billing_account_no || '—',
-              dateOfCommission: '—',
+              dateOfCommission,
               address: cleanAddr,
               wanIp
             }
@@ -583,7 +594,11 @@ const CustomerContacts = () => {
                                   <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-1">Date of Commission</p>
                                   <p className="text-sm font-semibold text-gray-300">{details.dateOfCommission || '—'}</p>
                                 </div>
-                                <div className="md:col-span-2 lg:col-span-3">
+                                <div>
+                                  <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-1">WAN IP Address</p>
+                                  <p className="text-sm font-semibold text-gray-300">{details.wanIp || '—'}</p>
+                                </div>
+                                <div className="md:col-span-3 lg:col-span-2">
                                   <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-1">Customer Address</p>
                                   <p className="text-sm font-semibold text-gray-300">{details.address || '—'}</p>
                                 </div>

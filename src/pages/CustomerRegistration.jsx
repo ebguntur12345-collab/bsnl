@@ -79,9 +79,13 @@ const CustomerRegistration = () => {
       const serviceUpper = (selectedService || '').toUpperCase();
       let serviceError = null;
 
-      const finalAddress = form.wanIp
-        ? `${form.address || '—'} (WAN IP: ${form.wanIp})`
-        : (form.address || '—');
+      let finalAddress = form.address || '—';
+      if (form.wanIp) {
+        finalAddress += ` (WAN IP: ${form.wanIp})`;
+      }
+      if (form.dateOfCommission) {
+        finalAddress += ` (DOC: ${form.dateOfCommission})`;
+      }
 
       if (serviceUpper.includes('ILL') || serviceUpper.includes('LEASED LINE')) {
         const { error } = await supabase.from('ill_data').insert([
