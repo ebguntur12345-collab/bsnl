@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, ChevronRight, Info, Loader2, Search, FileDown } from 'lucide-react';
+import { ChevronDown, ChevronRight, Info, Loader2, Search, FileDown, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import * as XLSX from 'xlsx';
 
@@ -61,22 +61,42 @@ const Contacts = () => {
     setExpandedRows(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('eb_contacts')
+        .select('*')
+        .order('id', { ascending: true });
+      if (!error && data) setAllData(data);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Load all EB contacts on mount
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('eb_contacts')
-          .select('*')
-          .order('id', { ascending: true });
-        if (!error && data) setAllData(data);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchData();
   }, []);
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this EB contact?')) return;
+    try {
+      const { error } = await supabase
+        .from('eb_contacts')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error deleting EB contact:', error.message);
+        alert('Failed to delete contact: ' + error.message);
+      } else {
+        fetchData();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   // Dynamically extract unique circles from database records for dropdown selector
   const uniqueCircles = Array.from(
@@ -299,14 +319,23 @@ const Contacts = () => {
                         </td>
                       ))}
                       <td className="px-6 py-4 text-center">
-                        <button 
-                          onClick={() => toggleRow(rowId)} 
-                          className={`p-2 rounded-xl transition-all flex items-center justify-center mx-auto ${
-                            expandedRows[rowId] ? 'bg-primary text-white shadow-[0_0_15px_rgba(0,180,216,0.3)]' : 'text-primary hover:bg-primary/10'
-                          }`}
-                        >
-                          {expandedRows[rowId] ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
-                        </button>
+                        <div className="flex items-center justify-center gap-2">
+                          <button 
+                            onClick={() => toggleRow(rowId)} 
+                            className={`p-2 rounded-xl transition-all flex items-center justify-center ${
+                              expandedRows[rowId] ? 'bg-primary text-white shadow-[0_0_15px_rgba(0,180,216,0.3)]' : 'text-primary hover:bg-primary/10'
+                            }`}
+                          >
+                            {expandedRows[rowId] ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+                          </button>
+                          <button
+                            onClick={() => handleDelete(row.id)}
+                            className="p-2 text-rose-500 hover:bg-rose-500/10 rounded-xl transition-colors"
+                            title="Delete EB Contact"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                     {expandedRows[rowId] && (
