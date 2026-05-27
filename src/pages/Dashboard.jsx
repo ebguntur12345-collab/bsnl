@@ -19,8 +19,9 @@ import {
 } from 'lucide-react';
 
 import { Link } from 'react-router-dom';
+import { downloadServiceExcel } from '../lib/excelExport';
 
-const DashboardStatCard = ({ title, subtitle, value, service_type, icon: Icon, colorClass = "text-primary" }) => (
+const DashboardStatCard = ({ title, subtitle, value, service_type, icon: Icon, colorClass = "text-primary", onDownload }) => (
   <Link 
     to={`/leased-lines/users/${encodeURIComponent(service_type || title)}`}
     className="bg-dark-card rounded-xl p-3.5 border border-dark-border card-hover group relative overflow-hidden flex flex-col justify-between min-h-[90px] block transition-all"
@@ -40,7 +41,20 @@ const DashboardStatCard = ({ title, subtitle, value, service_type, icon: Icon, c
         <p className="text-base font-black text-white tracking-tighter leading-none">{value}</p>
         <p className="text-[6px] font-black text-primary uppercase tracking-widest mt-1 opacity-0 group-hover:opacity-100 transition-opacity">View Details</p>
       </div>
-      <div className="w-1 h-1 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_5px_rgba(16,185,129,0.5)]"></div>
+      <div className="flex items-center gap-2">
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onDownload(service_type || title);
+          }}
+          className="text-gray-500 hover:text-primary transition-all p-1 hover:bg-dark-bg/50 rounded border border-white/5 opacity-0 group-hover:opacity-100 flex items-center justify-center"
+          title="Download Excel"
+        >
+          <FileDown size={10} />
+        </button>
+        <div className="w-1 h-1 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_5px_rgba(16,185,129,0.5)]"></div>
+      </div>
     </div>
   </Link>
 );
@@ -124,7 +138,7 @@ const Dashboard = () => {
           ))
         ) : (
           metrics.map((m, i) => (
-            <DashboardStatCard key={i} {...m} />
+            <DashboardStatCard key={i} {...m} onDownload={downloadServiceExcel} />
           ))
         )}
       </div>

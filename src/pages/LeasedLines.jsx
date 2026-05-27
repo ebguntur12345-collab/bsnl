@@ -19,12 +19,14 @@ import {
   ShoppingCart,
   CheckCircle,
   CreditCard,
-  Loader2
+  Loader2,
+  FileDown
 } from 'lucide-react';
 
 import { Link } from 'react-router-dom';
+import { downloadServiceExcel } from '../lib/excelExport';
 
-const LeasedLineCard = ({ title, value, icon: Icon, footerText = "Explore", to }) => (
+const LeasedLineCard = ({ title, value, icon: Icon, footerText = "Explore", to, onDownload }) => (
   <div className="bg-dark-card rounded-2xl border border-dark-border overflow-hidden card-hover group relative">
     <div className="p-6 flex items-center justify-between">
       <div className="w-12 h-12 rounded-xl bg-dark-bg border border-dark-border flex items-center justify-center text-gray-500 group-hover:text-primary group-hover:border-primary/30 transition-all">
@@ -40,12 +42,25 @@ const LeasedLineCard = ({ title, value, icon: Icon, footerText = "Explore", to }
         <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
         <span className="text-[10px] font-bold text-gray-600 uppercase tracking-wider">Live</span>
       </div>
-      <Link 
-        to={to || `/leased-lines/users/${encodeURIComponent(title)}`}
-        className="text-[11px] font-black text-primary hover:text-white transition-colors uppercase tracking-widest"
-      >
-        {footerText}
-      </Link>
+      <div className="flex items-center gap-4">
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onDownload(title);
+          }}
+          className="text-gray-500 hover:text-primary hover:bg-dark-bg/80 transition-all p-1.5 rounded-lg border border-dark-border/40"
+          title="Download Excel"
+        >
+          <FileDown size={14} />
+        </button>
+        <Link 
+          to={to || `/leased-lines/users/${encodeURIComponent(title)}`}
+          className="text-[11px] font-black text-primary hover:text-white transition-colors uppercase tracking-widest"
+        >
+          {footerText}
+        </Link>
+      </div>
     </div>
     
     {/* Subtle Glow */}
@@ -136,7 +151,7 @@ const LeasedLines = () => {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-20">
           {metrics.map((item, index) => (
-            <LeasedLineCard key={index} {...item} />
+            <LeasedLineCard key={index} {...item} onDownload={downloadServiceExcel} />
           ))}
         </div>
       )}

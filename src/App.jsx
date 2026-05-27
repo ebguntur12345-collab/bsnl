@@ -48,6 +48,7 @@ function App() {
           <Route path="customers/retail" element={<Customers />} />
           <Route path="custRegistration" element={<CustomerRegistration />} />
           <Route path="leased-lines/registration" element={<CCTRegistration />} />
+          <Route path="leased-lines/ill-576" element={<ILL576Users />} />
           <Route path="leased-lines/users/:serviceType" element={<ServiceUsers />} />
           <Route path="tariffs" element={<Tariffs />} />
           <Route path="tariffs/sip-trunk" element={<PdfViewer module="Tariffs" category="SIP Trunk" title="SIP Trunk Tariff" />} />

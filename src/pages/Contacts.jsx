@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, ChevronRight, Info, Loader2, Search } from 'lucide-react';
+import { ChevronDown, ChevronRight, Info, Loader2, Search, FileDown } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import * as XLSX from 'xlsx';
 
 const columns = [
   { header: '#',           key: 'id' },
@@ -21,6 +22,40 @@ const Contacts = () => {
   const [expandedRows, setExpandedRows]      = useState({});
   const [loading, setLoading]                = useState(false);
   const rowsPerPage = 10;
+
+  const downloadExcel = () => {
+    if (filteredData.length === 0) {
+      alert("No contacts available to export");
+      return;
+    }
+    const exportData = filteredData.map((row, index) => ({
+      "#": index + 1,
+      "Circle": row.circle || '—',
+      "Designation": row.designation || '—',
+      "Name": row.name || '—',
+      "Mobile": row.mobile || '—',
+      "Mail ID": row.mail_id || '—',
+      "BA Name": row.ba_name || '—',
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "EB_Contacts");
+    
+    // Auto-fit column widths
+    const maxLens = {};
+    exportData.forEach(row => {
+      Object.keys(row).forEach(key => {
+        const valStr = String(row[key]);
+        maxLens[key] = Math.max(maxLens[key] || key.length, valStr.length);
+      });
+    });
+    worksheet['!cols'] = Object.keys(maxLens).map(key => ({
+      wch: Math.min(maxLens[key] + 3, 50)
+    }));
+
+    XLSX.writeFile(workbook, "EB_Contacts.xlsx");
+  };
 
   const toggleRow = (id) => {
     setExpandedRows(prev => ({ ...prev, [id]: !prev[id] }));
@@ -212,6 +247,16 @@ const Contacts = () => {
               className="pl-10 pr-5 py-3 w-80 bg-dark-card border border-dark-border rounded-xl outline-none focus:ring-2 focus:ring-primary/20 text-sm text-gray-300 placeholder:text-gray-600 transition-all"
             />
           </div>
+
+          {/* Export Button */}
+          <button
+            onClick={downloadExcel}
+            className="flex items-center gap-2 bg-primary hover:bg-primary/95 text-white px-5 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] h-[46px]"
+            title="Download Excel"
+          >
+            <FileDown size={16} />
+            <span>Export</span>
+          </button>
         </div>
       </div>
 

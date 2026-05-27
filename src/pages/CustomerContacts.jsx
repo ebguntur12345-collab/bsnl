@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Search, UserPlus, Trash2, ChevronDown, ChevronRight, Info, Loader2 } from 'lucide-react';
+import { Search, UserPlus, Trash2, ChevronDown, ChevronRight, Info, Loader2, FileDown } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import * as XLSX from 'xlsx';
 
 const CustomerContacts = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -9,6 +10,42 @@ const CustomerContacts = () => {
   const [expandedDetails, setExpandedDetails] = useState({});
   const [loadingDetails, setLoadingDetails] = useState({});
   const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const rowsPerPage = 10;
+
+  const downloadExcel = () => {
+    if (filtered.length === 0) {
+      alert("No contacts available to export");
+      return;
+    }
+    const exportData = filtered.map((row, index) => ({
+      "#": index + 1,
+      "Company Name": row.companyName || '—',
+      "Location": row.location || '—',
+      "Contact Name": row.contactName || '—',
+      "Designation": row.designation || '—',
+      "Contact No": row.contactNo || '—',
+      "Mail ID": row.mailId || '—',
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Customer_Contacts");
+    
+    // Auto-fit column widths
+    const maxLens = {};
+    exportData.forEach(row => {
+      Object.keys(row).forEach(key => {
+        const valStr = String(row[key]);
+        maxLens[key] = Math.max(maxLens[key] || key.length, valStr.length);
+      });
+    });
+    worksheet['!cols'] = Object.keys(maxLens).map(key => ({
+      wch: Math.min(maxLens[key] + 3, 50)
+    }));
+
+    XLSX.writeFile(workbook, "Customer_Contacts.xlsx");
+  };
 
   // Load registered contacts from Supabase
   const loadContacts = async () => {
@@ -213,6 +250,67 @@ const CustomerContacts = () => {
       )
     : allContacts;
 
+  const totalPages = Math.ceil(filtered.length / rowsPerPage);
+  const paginated  = filtered.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+
+  const renderPaginationButtons = () => {
+    const pages = [];
+    if (totalPages <= 8) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      pages.push(1); // Always show first page
+      
+      let start = Math.max(2, currentPage - 1);
+      let end = Math.min(totalPages - 1, currentPage + 1);
+      
+      if (currentPage <= 3) {
+        end = 4;
+      }
+      if (currentPage >= totalPages - 2) {
+        start = totalPages - 3;
+      }
+
+      if (start > 2) {
+        pages.push('...');
+      }
+      
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+      
+      if (end < totalPages - 1) {
+        pages.push('...');
+      }
+      
+      pages.push(totalPages); // Always show last page
+    }
+    
+    return pages.map((p, idx) => {
+      if (p === '...') {
+        return (
+          <span key={`dots-${idx}`} className="w-10 h-10 flex items-center justify-center text-gray-600 text-sm font-bold">
+            ...
+          </span>
+        );
+      }
+      return (
+        <button
+          key={p}
+          onClick={() => setCurrentPage(p)}
+          className={`w-10 h-10 flex items-center justify-center rounded-xl text-xs font-black transition-all ${
+            p === currentPage 
+              ? 'bg-primary text-white shadow-[0_0_15px_rgba(0,180,216,0.3)]' 
+              : 'bg-dark-card border border-dark-border text-gray-400 hover:border-primary hover:text-white'
+          }`}
+        >
+          {p}
+        </button>
+      );
+    });
+  };
+
   return (
     <div className="p-8 space-y-8 animate-in fade-in duration-500 bg-dark-bg min-h-screen">
 
@@ -230,16 +328,26 @@ const CustomerContacts = () => {
           </div>
         </div>
 
-        {/* Search */}
-        <div className="relative">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search by name, contact, email…"
-            className="pl-9 pr-4 py-2 w-72 bg-dark-card border border-dark-border rounded-md outline-none focus:ring-2 focus:ring-[#00bfff]/20 transition-all text-gray-300 text-sm shadow-sm"
-          />
+        {/* Search & Actions */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={downloadExcel}
+            className="flex items-center gap-2 bg-primary hover:bg-primary/95 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] h-[38px]"
+            title="Download Excel"
+          >
+            <FileDown size={14} />
+            <span>Export</span>
+          </button>
+          <div className="relative">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+              placeholder="Search by name, contact, email…"
+              className="pl-9 pr-4 py-2 w-72 bg-dark-card border border-dark-border rounded-md outline-none focus:ring-2 focus:ring-[#00bfff]/20 transition-all text-gray-300 text-sm shadow-sm"
+            />
+          </div>
         </div>
       </div>
 
@@ -266,8 +374,8 @@ const CustomerContacts = () => {
                   <Loader2 size={32} className="animate-spin text-primary mx-auto" />
                 </td>
               </tr>
-            ) : filtered.length > 0 ? (
-              filtered.map((item, index) => {
+            ) : paginated.length > 0 ? (
+              paginated.map((item, index) => {
                 const rowId = item.id;
                 const details = expandedDetails[rowId];
                 const isDetailsLoading = loadingDetails[rowId];
@@ -275,7 +383,7 @@ const CustomerContacts = () => {
                 return (
                   <React.Fragment key={rowId}>
                     <tr className="hover:bg-white/[0.02] transition-colors">
-                      <td className="px-6 py-4 text-sm text-gray-500 font-medium">{index + 1}</td>
+                      <td className="px-6 py-4 text-sm text-gray-500 font-medium">{(currentPage - 1) * rowsPerPage + index + 1}</td>
                       <td className="px-6 py-4 text-sm text-white font-bold">{item.companyName}</td>
                       <td className="px-6 py-4 text-sm text-gray-300">{item.location}</td>
                       <td className="px-6 py-4 text-sm text-gray-300">{item.contactName}</td>
@@ -363,6 +471,29 @@ const CustomerContacts = () => {
             )}
           </tbody>
         </table>
+        {/* Dynamic sliding window pagination footer */}
+        <div className="px-8 py-6 bg-dark-bg/30 border-t border-dark-border flex items-center justify-between">
+          <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">
+            Showing {paginated.length} of {filtered.length} entries
+          </span>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="p-2.5 bg-dark-card border border-dark-border rounded-xl text-gray-400 hover:text-primary hover:border-primary disabled:opacity-30 transition-all"
+            ><ChevronRight size={18} className="rotate-180" /></button>
+            
+            <div className="flex gap-2">
+              {renderPaginationButtons()}
+            </div>
+
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="p-2.5 bg-dark-card border border-dark-border rounded-xl text-gray-400 hover:text-primary hover:border-primary disabled:opacity-30 transition-all"
+            ><ChevronRight size={18} /></button>
+          </div>
+        </div>
       </div>
 
     </div>

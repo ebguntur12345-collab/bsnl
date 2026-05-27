@@ -291,7 +291,7 @@ const GmailInboxContent = () => {
                 <p className="text-[10px] font-black text-blue-700 uppercase leading-none">{userProfile?.name || 'Gmail Connected'}</p>
                 <button onClick={logout} className="text-[9px] text-red-500 hover:underline font-bold">Sign Out</button>
               </div>
-              {userProfile?.picture && <img src={userProfile.picture} className="w-8 h-8 rounded-full border-2 border-blue-100 shadow-sm" alt="profile" />}
+              {userProfile?.picture && <img src={userProfile.picture} referrerPolicy="no-referrer" className="w-8 h-8 rounded-full border-2 border-blue-100 shadow-sm" alt="profile" />}
             </div>
           ) : (
              <button onClick={() => login()} className="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-lg">Login</button>

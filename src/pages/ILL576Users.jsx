@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Laptop, ChevronRight, ChevronDown, Info, ArrowLeft, Loader2 } from 'lucide-react';
+import { Search, Laptop, ChevronRight, ChevronDown, Info, ArrowLeft, Loader2, FileDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { downloadServiceExcel } from '../lib/excelExport';
 
 const ILL576Users = () => {
   const navigate = useNavigate();
@@ -9,6 +10,8 @@ const ILL576Users = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedRows, setExpandedRows] = useState({});
   const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const rowsPerPage = 10;
 
   useEffect(() => {
     const fetchILLData = async () => {
@@ -58,6 +61,67 @@ const ILL576Users = () => {
       )
     : users;
 
+  const totalPages = Math.ceil(filtered.length / rowsPerPage);
+  const paginated  = filtered.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+
+  const renderPaginationButtons = () => {
+    const pages = [];
+    if (totalPages <= 8) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      pages.push(1); // Always show first page
+      
+      let start = Math.max(2, currentPage - 1);
+      let end = Math.min(totalPages - 1, currentPage + 1);
+      
+      if (currentPage <= 3) {
+        end = 4;
+      }
+      if (currentPage >= totalPages - 2) {
+        start = totalPages - 3;
+      }
+
+      if (start > 2) {
+        pages.push('...');
+      }
+      
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+      
+      if (end < totalPages - 1) {
+        pages.push('...');
+      }
+      
+      pages.push(totalPages); // Always show last page
+    }
+    
+    return pages.map((p, idx) => {
+      if (p === '...') {
+        return (
+          <span key={`dots-${idx}`} className="w-10 h-10 flex items-center justify-center text-gray-600 text-sm font-bold">
+            ...
+          </span>
+        );
+      }
+      return (
+        <button
+          key={p}
+          onClick={() => setCurrentPage(p)}
+          className={`w-10 h-10 flex items-center justify-center rounded-xl text-xs font-black transition-all ${
+            p === currentPage 
+              ? 'bg-primary text-white shadow-[0_0_15px_rgba(0,180,216,0.3)]' 
+              : 'bg-dark-card border border-dark-border text-gray-400 hover:border-primary hover:text-white'
+          }`}
+        >
+          {p}
+        </button>
+      );
+    });
+  };
+
   return (
     <div className="p-8 space-y-8 animate-in fade-in duration-500 max-w-[1400px] mx-auto min-h-screen bg-dark-bg">
 
@@ -81,16 +145,26 @@ const ILL576Users = () => {
           </div>
         </div>
 
-        {/* Search */}
-        <div className="relative">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            placeholder="Search by name, circuit ID, location…"
-            className="pl-9 pr-4 py-2.5 w-80 bg-dark-card border border-dark-border rounded-xl outline-none focus:ring-2 focus:ring-primary/20 text-sm text-gray-300 placeholder:text-gray-600 transition-all"
-          />
+        {/* Search & Actions */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => downloadServiceExcel('Internet Leased Line (ILL)')}
+            className="flex items-center gap-2 bg-primary hover:bg-primary/95 text-white px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98]"
+            title="Download Excel"
+          >
+            <FileDown size={16} />
+            <span>Export</span>
+          </button>
+          <div className="relative">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+              placeholder="Search by name, circuit ID, location…"
+              className="pl-9 pr-4 py-2.5 w-80 bg-dark-card border border-dark-border rounded-xl outline-none focus:ring-2 focus:ring-primary/20 text-sm text-gray-300 placeholder:text-gray-600 transition-all"
+            />
+          </div>
         </div>
       </div>
 
@@ -125,13 +199,13 @@ const ILL576Users = () => {
                   <Loader2 size={32} className="animate-spin text-primary mx-auto" />
                 </td>
               </tr>
-            ) : filtered.length > 0 ? (
-              filtered.map((user, index) => {
+            ) : paginated.length > 0 ? (
+              paginated.map((user, index) => {
                 const rowId = user.id || index;
                 return (
                   <React.Fragment key={rowId}>
                     <tr className="hover:bg-white/[0.03] transition-colors">
-                      <td className="px-5 py-4 text-sm text-gray-500 font-bold">{index + 1}</td>
+                      <td className="px-5 py-4 text-sm text-gray-500 font-bold">{(currentPage - 1) * rowsPerPage + index + 1}</td>
                       <td className="px-5 py-4">
                         <p className="text-sm font-black text-white">{user.companyName || '—'}</p>
                         <p className="text-xs text-gray-500">{user.mailId || '—'}</p>
@@ -198,6 +272,29 @@ const ILL576Users = () => {
             )}
           </tbody>
         </table>
+        {/* Dynamic sliding window pagination footer */}
+        <div className="px-8 py-6 bg-dark-bg/30 border-t border-dark-border flex items-center justify-between">
+          <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">
+            Showing {paginated.length} of {filtered.length} entries
+          </span>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="p-2.5 bg-dark-card border border-dark-border rounded-xl text-gray-400 hover:text-primary hover:border-primary disabled:opacity-30 transition-all"
+            ><ChevronRight size={18} className="rotate-180" /></button>
+            
+            <div className="flex gap-2">
+              {renderPaginationButtons()}
+            </div>
+
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="p-2.5 bg-dark-card border border-dark-border rounded-xl text-gray-400 hover:text-primary hover:border-primary disabled:opacity-30 transition-all"
+            ><ChevronRight size={18} /></button>
+          </div>
+        </div>
       </div>
     </div>
   );
