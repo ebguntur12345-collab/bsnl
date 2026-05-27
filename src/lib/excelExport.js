@@ -46,139 +46,173 @@ export const getServiceTableInfo = (serviceName) => {
   return { table, isDOJ, isElection, isCollector, isNHM };
 };
 
-export const mapServiceRow = (r, table, isDOJ, isCollector, isNHM, isElection) => {
-  if (table === 'ill_data') {
-    const displayServiceType = isDOJ ? 'DOJ' : (isCollector ? 'Collectorates' : (isNHM ? 'NHM' : 'Internet Leased Line (ILL)'));
-    return {
-      "ID": r.id,
-      "Customer Name": r.customer_name || '—',
-      "Circuit ID (LC ID)": r.lc_id || '—',
-      "Bandwidth": r.bandwidth || '—',
-      "Billing SSA": r.billing_ssa || '—',
-      "Phone No": r.phone_no || '—',
-      "Email Address": r.email_address || '—',
-      "Billing Account No": r.billing_account_no || '—',
-      "Service Start Date": r.service_start_date || '—',
-      "Last Mile": r.last_mile || '—',
-      "Installation Address": r.address || '—',
-      "Service Category": displayServiceType
-    };
-  } else if (table === 'pri_data') {
-    return {
-      "ID": r.id,
-      "Customer Name": r.customer_name || '—',
-      "Telephone No": r.telephone_no || '—',
-      "PRI Plan": r.pri_plan || '—',
-      "Billing Account No": r.billing_account_no || '—',
-      "Installation Address": r.address || '—',
-      "Service Category": 'ISDN PRI'
-    };
-  } else if (table === 'sip_data') {
-    return {
-      "ID": r.id,
-      "Customer Name": r.customer_name || '—',
-      "Telephone No": r.telephone_no || '—',
-      "SIP Plan": r.sip_plan || '—',
-      "Billing Account No": r.billing_account_no || '—',
-      "Installation Address": r.address || '—',
-      "Service Category": 'SIP Trunk'
-    };
-  } else if (table === 'mmvc_data') {
-    return {
-      "ID": r.id,
-      "Customer Name": r.customer_name || '—',
-      "Telephone No": r.telephone_no || '—',
-      "MMV Plan": r.mmv_plan || '—',
-      "Billing Account No": r.billing_account_no || '—',
-      "Installation Address": r.address || '—',
-      "Service Category": 'MMVC'
-    };
-  } else if (table === 'mpls_data') {
-    return {
-      "ID": r.id,
-      "Customer Name": r.customer_name || '—',
-      "Telephone No": r.telephone_no || '—',
-      "Bandwidth": r.bandwidth || '—',
-      "Billing Account No": r.billing_account_no || '—',
-      "Installation Address": r.address || '—',
-      "Service Category": 'MPLS VPN'
-    };
-  } else if (table === 'nmect_data') {
-    return {
-      "ID": r.id,
-      "Customer Name": r.customer_name || '—',
-      "Telephone No": r.telephone_no || '—',
-      "Bandwidth": r.bandwidth || '—',
-      "NMECT Plan": r.nmect_plan || '—',
-      "Billing Account No": r.billing_account_no || '—',
-      "Installation Address": r.address || '—',
-      "Service Category": 'NMECT'
-    };
-  } else if (table === 'cggb') {
-    return {
-      "ID": r.id,
-      "Name": r.name || '—',
-      "Circuit ID": r.circuit_id || '—',
-      "Bandwidth": r.bandwidth || '—',
-      "WAN IP": r.wan_ip || '—',
-      "OA (Location)": r.oa || '—',
-      "Field Incharge Name": r.field_incharge_name || '—',
-      "Field Incharge Number": r.field_incharge_number || '—',
-      "PCM Incharge Number": r.pcm_incharge_number || '—',
-      "Billing Account": r.billing_account || '—',
-      "Service Category": 'CGGB'
-    };
+export const mapServiceRow = (r, table, isDOJ, isCollector, isNHM, isElection, customersList = [], index = 0) => {
+  const parseAddressForExport = (fullAddress) => {
+    if (!fullAddress) return { address: '—', wanIp: '—', dateOfCommission: '—' };
+    let cleanAddress = fullAddress;
+    let wanIp = '—';
+    let dateOfCommission = '—';
+    const ipMatch = cleanAddress.match(/\(WAN IP:\s*([^\)]+)\)/i);
+    if (ipMatch) { wanIp = ipMatch[1].trim(); cleanAddress = cleanAddress.replace(/\s*\(WAN IP:\s*[^\)]+\)/i, '').trim(); }
+    const docMatch = cleanAddress.match(/\(DOC:\s*([^\)]+)\)/i);
+    if (docMatch) { dateOfCommission = docMatch[1].trim(); cleanAddress = cleanAddress.replace(/\s*\(DOC:\s*[^\)]+\)/i, '').trim(); }
+    return { address: cleanAddress || '—', wanIp, dateOfCommission };
+  };
+
+  // Get raw values from table record
+  let companyName = '—';
+  let location = '—';
+  let contactName = '—';
+  let designation = '—';
+  let contactNo = '—';
+  let mailId = '—';
+  
+  let serviceType = '—';
+  let plan = '—';
+  let circuitId = '—';
+  let billingAccountNo = '—';
+  let dateOfCommission = '—';
+  let address = '—';
+  let wanIp = '—';
+
+  // 1. Resolve Company Name
+  if (table === 'cggb') {
+    companyName = r.name || '—';
   } else if (table === 'tobacco_board') {
-    return {
-      "ID": r.id,
-      "Location": r.location || '—',
-      "LC ID / Circuit ID": r.lc_id || '—',
-      "CCT Rent Qly": r.cct_rent_qly || '—',
-      "Bandwidth": r.bandwidth || '—',
-      "Circle": r.circle || '—',
-      "BA Name": r.ba_name || '—',
-      "EB Incharge": r.eb_incharge || '—',
-      "Contact No": r.contact_no || '—',
-      "BBM Incharge": r.bbm_incharge || '—',
-      "BBM Contact": r.bbm_contact || '—',
-      "Billing Account": r.billing_account || '—',
-      "Service Category": 'Tobacco Board'
-    };
+    companyName = r.location ? `Tobacco Board (${r.location})` : 'Tobacco Board';
   } else if (table === 'nregs') {
-    return {
-      "ID": r.id,
-      "District": r.district || '—',
-      "Mandal": r.mandal || '—',
-      "Telephone No": r.telephone_no || '—',
-      "Computer Operator Name": r.computer_operator_name || '—',
-      "Contact No": r.contact_no || '—',
-      "DRP Contact No": r.drp_contact_no || '—',
-      "BBM No": r.bbm_no || '—',
-      "TIP No": r.tip_no || '—',
-      "Service Category": 'NREGS'
-    };
-  } else if (table === 'toll_free') {
-    const displayServiceType = isElection ? 'Election Commission (Toll Free)' : 'Toll Free';
-    return {
-      "ID": r.id,
-      "Customer Name": r.customer_name || '—',
-      "Telephone No": r.telephone_no || '—',
-      "Billing Account No": r.billing_account_no || '—',
-      "Installation Address": r.address || '—',
-      "Service Category": displayServiceType
-    };
+    companyName = r.computer_operator_name ? `Computer Operator: ${r.computer_operator_name}` : 'NREGS Office';
   } else {
-    return {
-      "ID": r.id,
-      "Company Name": r.company_name || '—',
-      "Email ID": r.mail_id || '—',
-      "Location": r.location || '—',
-      "Contact Name": r.contact_name || '—',
-      "Designation": r.designation || '—',
-      "Contact No": r.contact_no || '—',
-      "Service Category": 'General'
-    };
+    companyName = r.customer_name || '—';
   }
+
+  // 2. Lookup Contact details in customersList
+  const nameClean = companyName.trim().toLowerCase();
+  const match = customersList.find(c => (c.company_name || '').trim().toLowerCase() === nameClean);
+
+  if (match) {
+    location = match.location || '—';
+    contactName = match.contact_name || '—';
+    designation = match.designation || '—';
+    contactNo = match.contact_no || '—';
+    mailId = match.mail_id || '—';
+  } else {
+    // Fallback/Default values for contact info from table
+    if (table === 'ill_data') {
+      location = r.billing_ssa || '—';
+      contactNo = r.phone_no || '—';
+      mailId = r.email_address || '—';
+    } else if (table === 'cggb') {
+      location = r.oa || '—';
+      contactNo = r.field_incharge_number || '—';
+    } else if (table === 'tobacco_board') {
+      location = r.ba_name ? `${r.ba_name} (${r.circle || '—'})` : (r.circle || '—');
+      contactNo = r.contact_no || '—';
+    } else if (table === 'nregs') {
+      location = r.mandal ? `${r.mandal}, ${r.district || '—'}` : (r.district || '—');
+      contactNo = r.contact_no || '—';
+    } else if (['pri_data', 'sip_data', 'mmvc_data', 'mpls_data', 'nmect_data', 'toll_free'].includes(table)) {
+      contactNo = r.telephone_no || '—';
+    }
+  }
+
+  // 3. Resolve technical service details
+  if (table === 'ill_data') {
+    const parsed = parseAddressForExport(r.address);
+    serviceType = isDOJ ? 'DOJ' : (isCollector ? 'Collectorates' : (isNHM ? 'NHM' : 'Internet Leased Line (ILL)'));
+    plan = r.bandwidth || '—';
+    circuitId = r.lc_id || '—';
+    billingAccountNo = r.billing_account_no || '—';
+    dateOfCommission = (r.service_start_date && r.service_start_date !== 'NULL') ? r.service_start_date : parsed.dateOfCommission;
+    address = parsed.address;
+    wanIp = parsed.wanIp;
+  } else if (table === 'pri_data') {
+    const parsed = parseAddressForExport(r.address);
+    serviceType = 'ISDN PRI';
+    plan = r.pri_plan || '—';
+    circuitId = r.telephone_no || '—';
+    billingAccountNo = r.billing_account_no || '—';
+    address = parsed.address;
+    wanIp = parsed.wanIp;
+    dateOfCommission = parsed.dateOfCommission;
+  } else if (table === 'sip_data') {
+    const parsed = parseAddressForExport(r.address);
+    serviceType = 'SIP Trunk';
+    plan = r.sip_plan || '—';
+    circuitId = r.telephone_no || '—';
+    billingAccountNo = r.billing_account_no || '—';
+    address = parsed.address;
+    wanIp = parsed.wanIp;
+    dateOfCommission = parsed.dateOfCommission;
+  } else if (table === 'mmvc_data') {
+    const parsed = parseAddressForExport(r.address);
+    serviceType = 'MMVC';
+    plan = r.mmv_plan || '—';
+    circuitId = r.telephone_no || '—';
+    billingAccountNo = r.billing_account_no || '—';
+    address = parsed.address;
+    wanIp = parsed.wanIp;
+    dateOfCommission = parsed.dateOfCommission;
+  } else if (table === 'mpls_data') {
+    const parsed = parseAddressForExport(r.address);
+    serviceType = 'MPLS VPN';
+    plan = r.bandwidth || '—';
+    circuitId = r.telephone_no || '—';
+    billingAccountNo = r.billing_account_no || '—';
+    address = parsed.address;
+    wanIp = parsed.wanIp;
+    dateOfCommission = parsed.dateOfCommission;
+  } else if (table === 'nmect_data') {
+    const parsed = parseAddressForExport(r.address);
+    serviceType = 'NMECT';
+    plan = r.nmect_plan || r.bandwidth || '—';
+    circuitId = r.telephone_no || '—';
+    billingAccountNo = r.billing_account_no || '—';
+    address = parsed.address;
+    wanIp = parsed.wanIp;
+    dateOfCommission = parsed.dateOfCommission;
+  } else if (table === 'cggb') {
+    serviceType = 'CGGB';
+    plan = r.bandwidth || '—';
+    circuitId = r.circuit_id || '—';
+    billingAccountNo = r.billing_account || '—';
+    wanIp = r.wan_ip || '—';
+    address = r.oa || '—';
+  } else if (table === 'tobacco_board') {
+    serviceType = 'Tobacco Board';
+    plan = r.bandwidth || '—';
+    circuitId = r.lc_id || '—';
+    billingAccountNo = r.billing_account || '—';
+  } else if (table === 'nregs') {
+    serviceType = 'NREGS';
+    plan = r.bbm_no ? `BBM: ${r.bbm_no}` : (r.tip_no ? `TIP: ${r.tip_no}` : '—');
+    circuitId = r.telephone_no || '—';
+  } else if (table === 'toll_free') {
+    const parsed = parseAddressForExport(r.address);
+    serviceType = isElection ? 'Election Commission (Toll Free)' : 'Toll Free';
+    circuitId = r.telephone_no || '—';
+    billingAccountNo = r.billing_account_no || '—';
+    address = parsed.address;
+    wanIp = parsed.wanIp;
+    dateOfCommission = parsed.dateOfCommission;
+  }
+
+  return {
+    "#": index + 1,
+    "Company Name": companyName,
+    "Location": location,
+    "Contact Name": contactName,
+    "Designation": designation,
+    "Contact No": contactNo,
+    "Mail ID": mailId,
+    "Service Type": serviceType,
+    "Bandwidth / Plan": plan,
+    "Circuit ID": circuitId,
+    "Billing Account No": billingAccountNo,
+    "Date of Commission": dateOfCommission,
+    "Installation Address": address,
+    "WAN IP Address": wanIp
+  };
 };
 
 /**
@@ -205,18 +239,26 @@ export const downloadServiceExcel = async (serviceName) => {
       query = query.or('customer_name.ilike.%nhm%,customer_name.ilike.%health%');
     }
 
-    const { data, error } = await query.order('id', { ascending: true });
+    const [serviceRes, custRes] = await Promise.all([
+      query.order('id', { ascending: true }),
+      supabase.from('customers_data').select('*')
+    ]);
 
-    if (error) {
-      throw error;
+    if (serviceRes.error) {
+      throw serviceRes.error;
     }
 
-    if (!data || data.length === 0) {
+    const serviceData = serviceRes.data || [];
+    const customersList = custRes.data || [];
+
+    if (serviceData.length === 0) {
       alert(`No records found for ${serviceName}`);
       return;
     }
 
-    const formattedData = data.map(r => mapServiceRow(r, table, isDOJ, isCollector, isNHM, isElection));
+    const formattedData = serviceData.map((r, index) => 
+      mapServiceRow(r, table, isDOJ, isCollector, isNHM, isElection, customersList, index)
+    );
     
     const worksheet = XLSX.utils.json_to_sheet(formattedData);
     const workbook = XLSX.utils.book_new();
