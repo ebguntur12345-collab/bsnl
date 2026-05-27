@@ -15,13 +15,14 @@ CREATE POLICY "Allow anon insert" ON bas_circles FOR INSERT WITH CHECK (true);
 
 -- 2. EB Contacts
 CREATE TABLE IF NOT EXISTS eb_contacts (
-  id          SERIAL PRIMARY KEY,
-  circle      TEXT,
-  designation TEXT,
-  name        TEXT,
-  mobile      TEXT,
-  mail_id     TEXT,
-  ba_name     TEXT
+  id              SERIAL PRIMARY KEY,
+  circle          TEXT,
+  designation     TEXT,
+  name            TEXT,
+  enterprise_name TEXT,
+  mobile          TEXT,
+  mail_id         TEXT,
+  ba_name         TEXT
 );
 ALTER TABLE eb_contacts ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow public read" ON eb_contacts FOR SELECT USING (true);

@@ -13,6 +13,8 @@ const columns = [
   { header: 'BA Name',     key: 'ba_name' },
 ];
 
+
+
 const Contacts = () => {
   const [selectedCircle, setSelectedCircle] = useState('ALL');
   const [selectedBA, setSelectedBA]         = useState('ALL');
@@ -141,6 +143,7 @@ const Contacts = () => {
         (r.circle || '').toLowerCase().includes(s) ||
         (r.designation || '').toLowerCase().includes(s) ||
         (r.name || '').toLowerCase().includes(s) ||
+        (r.enterprise_name || '').toLowerCase().includes(s) ||
         (r.mobile || '').toLowerCase().includes(s) ||
         (r.mail_id || '').toLowerCase().includes(s) ||
         (r.ba_name || '').toLowerCase().includes(s);
@@ -350,13 +353,14 @@ const Contacts = () => {
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 bg-dark-card p-6 rounded-2xl border border-dark-border shadow-inner">
                               {[
-                                { label: 'Circle',       value: row.circle },
-                                { label: 'Designation',  value: row.designation },
-                                { label: 'Name',         value: row.name },
-                                { label: 'Mobile',       value: row.mobile },
-                                { label: 'Mail ID',      value: row.mail_id },
-                                { label: 'BA Name',      value: row.ba_name },
-                                { label: 'Service Type', value: row.service_type },
+                                { label: 'Circle',          value: row.circle },
+                                { label: 'Designation',     value: row.designation },
+                                { label: 'Enterprise Name', value: row.enterprise_name },
+                                { label: 'Contact Name',    value: row.name },
+                                { label: 'Mobile',          value: row.mobile },
+                                { label: 'Mail ID',         value: row.mail_id },
+                                { label: 'BA Name',         value: row.ba_name },
+                                { label: 'Service Type',    value: row.service_type },
                               ].map((f, fi) => (
                                 <div key={fi}>
                                   <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-1">{f.label}</p>

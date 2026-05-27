@@ -103,7 +103,8 @@ const CCTRegistration = () => {
         {
           circle: selectedState || '—',
           designation: form.designation || '—',
-          name: form.primaryContactName || form.enterpriseName || '—',
+          name: form.primaryContactName || '—',
+          enterprise_name: form.enterpriseName || '—',
           mobile: form.contactNo || '—',
           mail_id: form.email || '—',
           ba_name: selectedDistrict || '—',
