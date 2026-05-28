@@ -71,9 +71,9 @@ function App() {
           <Route path="inbox" element={<Inbox />} />
           <Route path="leased-lines" element={<LeasedLines />} />
           <Route path="tasks" element={<Tasks />} />
-          <Route path="workers-login" element={<WorkerLogin />} />
-          <Route path="wokers-login" element={<WorkerLogin />} />
         </Route>
+        <Route path="/workers-login" element={<WorkerLogin />} />
+        <Route path="/wokers-login" element={<WorkerLogin />} />
         <Route path="/admin" element={<AdminLogin />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
       </Routes>
