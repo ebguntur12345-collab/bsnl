@@ -131,7 +131,7 @@ const CCTRegistration = () => {
   return (
     <div className="p-8 space-y-8 animate-in fade-in duration-500 max-w-[1200px] mx-auto bg-dark-bg min-h-screen">
       <div className="flex flex-col gap-2 mb-8">
-        <h1 className="text-3xl font-black text-white tracking-tight">CCT Registration</h1>
+        <h1 className="text-3xl font-black text-white tracking-tight">Employees Registration</h1>
         <p className="text-gray-400 font-medium">Register official Enterprise Business contacts for government and corporate circuits.</p>
       </div>
 

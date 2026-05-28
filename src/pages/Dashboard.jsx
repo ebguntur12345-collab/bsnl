@@ -15,15 +15,87 @@ import {
   DollarSign,
   Phone,
   CheckCircle,
-  Monitor
+  Monitor,
+  PhoneCall,
+  Server,
+  Building2,
+  Vote,
+  Leaf,
+  Stethoscope,
+  PhoneForwarded,
+  Laptop,
+  Keyboard
 } from 'lucide-react';
 
 import { Link } from 'react-router-dom';
 import { downloadServiceExcel } from '../lib/excelExport';
 
+const iconMap = {
+  Zap,
+  RefreshCw,
+  Phone,
+  PhoneCall,
+  Server,
+  Building2,
+  Users,
+  Monitor,
+  CreditCard,
+  ShoppingCart,
+  Vote,
+  Leaf,
+  Stethoscope,
+  PhoneForwarded,
+  Laptop,
+  Keyboard,
+  CheckCircle
+};
+
+const getTableForMetric = (title, serviceType) => {
+  const t = (title || '').toLowerCase();
+  const s = (serviceType || '').toLowerCase();
+
+  if (t.includes('doj')) return { table: 'ill_data', filter: 'doj' };
+  if (t.includes('election')) return { table: 'toll_free', filter: 'election' };
+  if (t.includes('collector')) return { table: 'ill_data', filter: 'collector' };
+  if (t.includes('nhm')) return { table: 'ill_data', filter: 'nhm' };
+
+  if (t.includes('ill') || t.includes('leased line') || s.includes('ill') || s.includes('leased line')) {
+    return { table: 'ill_data' };
+  }
+  if (t.includes('pri') || s.includes('pri')) {
+    return { table: 'pri_data' };
+  }
+  if (t.includes('sip') || s.includes('sip')) {
+    return { table: 'sip_data' };
+  }
+  if (t.includes('mmvc') || s.includes('mmvc')) {
+    return { table: 'mmvc_data' };
+  }
+  if (t.includes('mpls') || s.includes('mpls')) {
+    return { table: 'mpls_data' };
+  }
+  if (t.includes('nmect') || s.includes('nmect')) {
+    return { table: 'nmect_data' };
+  }
+  if (t.includes('cggb') || s.includes('cggb')) {
+    return { table: 'cggb' };
+  }
+  if (t.includes('tobacco') || s.includes('tobacco')) {
+    return { table: 'tobacco_board' };
+  }
+  if (t.includes('nregs') || s.includes('nregs')) {
+    return { table: 'nregs' };
+  }
+  if (t.includes('toll') || s.includes('toll')) {
+    return { table: 'toll_free' };
+  }
+  
+  return { table: 'eb_contacts' }; // fallback table
+};
+
 const DashboardStatCard = ({ title, subtitle, value, service_type, icon: Icon, colorClass = "text-primary", onDownload }) => (
   <Link 
-    to={`/leased-lines/users/${encodeURIComponent(service_type || title)}`}
+    to={`/leased-lines/users/${encodeURIComponent(service_type && service_type !== 'None' ? service_type : title)}`}
     className="bg-dark-card rounded-xl p-3.5 border border-dark-border card-hover group relative overflow-hidden flex flex-col justify-between min-h-[90px] block transition-all"
   >
     <div className="flex items-start justify-between gap-2">
@@ -46,7 +118,7 @@ const DashboardStatCard = ({ title, subtitle, value, service_type, icon: Icon, c
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            onDownload(service_type || title);
+            onDownload(service_type && service_type !== 'None' ? service_type : title);
           }}
           className="text-gray-500 hover:text-primary transition-all p-1 hover:bg-dark-bg/50 rounded border border-white/5 opacity-0 group-hover:opacity-100 flex items-center justify-center"
           title="Download Excel"
@@ -68,33 +140,58 @@ const Dashboard = () => {
     // Fetch Metrics from Supabase
     const fetchMetrics = async () => {
       setLoadingMetrics(true);
-      const defaults = [
-        { title: "ILL CCTs", subtitle: "ILL Circuits", service_type: "Internet Leased Line (ILL)", table: "ill_data", icon: Zap },
-        { title: "MPLS CCTs", subtitle: "MPLS Circuits", service_type: "MPLS", table: "mpls_data", icon: RefreshCw },
-        { title: "ISDN PRI", subtitle: "PRI Circuits", service_type: "ISDN PRI", table: "pri_data", icon: Phone },
-        { title: "SIP TRUNKS", subtitle: "SIP Trunks", service_type: "SIP Trunk", table: "sip_data", icon: Phone },
-        { title: "MMVC", subtitle: "MMVC Circuits", service_type: "MMVC", table: "mmvc_data", icon: CreditCard },
-        { title: "NMECT CCTs", subtitle: "NMECT Circuits", service_type: "NMECT", table: "nmect_data", icon: ShoppingCart },
-        { title: "CGGB", subtitle: "CGGB Circuits", service_type: "CGGB", table: "cggb", icon: Users },
-        { title: "Tobacco Board", subtitle: "Tobacco Board Circuits", service_type: "Tobacco Board", table: "tobacco_board", icon: Zap },
-        { title: "NREGS", subtitle: "NREGS Circuits", service_type: "NREGS", table: "nregs", icon: RefreshCw },
-        { title: "Toll Free", subtitle: "Toll Free Circuits", service_type: "Toll Free", table: "toll_free", icon: Phone },
-      ];
-
       try {
+        const { data: dbMetrics, error: dbError } = await supabase
+          .from('enterprise_metrics')
+          .select('*')
+          .order('created_at', { ascending: true });
+
+        if (dbError) throw dbError;
+
+        const mappedMetrics = (dbMetrics || []).map(m => {
+          const IconComp = iconMap[m.icon_name] || Zap;
+          let colorClass = "text-primary";
+          if (m.icon_name === 'Zap') colorClass = "text-yellow-400";
+          else if (m.icon_name === 'RefreshCw') colorClass = "text-blue-400";
+          else if (m.icon_name === 'Phone') colorClass = "text-green-400";
+          else if (m.icon_name === 'PhoneCall') colorClass = "text-emerald-400";
+
+          return {
+            title: m.title,
+            subtitle: m.subtitle || m.service_type || 'Live',
+            service_type: m.service_type,
+            icon: IconComp,
+            colorClass: colorClass
+          };
+        });
+
         const counts = await Promise.all(
-          defaults.map(async (item) => {
-            const { count, error } = await supabase
-              .from(item.table)
-              .select('*', { count: 'exact', head: true });
-            return error ? 0 : (count || 0);
+          mappedMetrics.map(async (item) => {
+            const { table, filter } = getTableForMetric(item.title, item.service_type);
+            try {
+              let query = supabase.from(table).select('*', { count: 'exact', head: true });
+              if (filter === 'doj') {
+                query = query.or('customer_name.ilike.%doj%,customer_name.ilike.%justice%,customer_name.ilike.%court%');
+              } else if (filter === 'election') {
+                query = query.or('customer_name.ilike.%election%,customer_name.ilike.%commission%');
+              } else if (filter === 'collector') {
+                query = query.or('customer_name.ilike.%collector%,customer_name.ilike.%collectorate%');
+              } else if (filter === 'nhm') {
+                query = query.or('customer_name.ilike.%nhm%,customer_name.ilike.%health%');
+              } else if (table === 'eb_contacts') {
+                query = query.eq('service_type', item.title);
+              }
+              const { count, error } = await query;
+              return error ? 0 : (count || 0);
+            } catch {
+              return 0;
+            }
           })
         );
 
-        setMetrics(defaults.map((m, idx) => ({
+        setMetrics(mappedMetrics.map((m, idx) => ({
           ...m,
-          value: `${counts[idx]}`,
-          icon: m.icon
+          value: `${counts[idx]}`
         })));
       } catch (err) {
         console.error('Error fetching live metrics:', err);

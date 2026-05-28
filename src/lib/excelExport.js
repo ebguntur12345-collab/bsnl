@@ -43,6 +43,10 @@ export const getServiceTableInfo = (serviceName) => {
     table = 'toll_free';
   }
 
+  if (!table) {
+    table = 'eb_contacts';
+  }
+
   return { table, isDOJ, isElection, isCollector, isNHM };
 };
 
@@ -82,6 +86,8 @@ export const mapServiceRow = (r, table, isDOJ, isCollector, isNHM, isElection, c
     companyName = r.location ? `Tobacco Board (${r.location})` : 'Tobacco Board';
   } else if (table === 'nregs') {
     companyName = r.computer_operator_name ? `Computer Operator: ${r.computer_operator_name}` : 'NREGS Office';
+  } else if (table === 'eb_contacts') {
+    companyName = r.enterprise_name || '—';
   } else {
     companyName = r.customer_name || '—';
   }
@@ -111,6 +117,12 @@ export const mapServiceRow = (r, table, isDOJ, isCollector, isNHM, isElection, c
     } else if (table === 'nregs') {
       location = r.mandal ? `${r.mandal}, ${r.district || '—'}` : (r.district || '—');
       contactNo = r.contact_no || '—';
+    } else if (table === 'eb_contacts') {
+      location = r.circle ? `${r.circle} (${r.ba_name || '—'})` : (r.ba_name || '—');
+      contactName = r.name || '—';
+      designation = r.designation || '—';
+      contactNo = r.mobile || '—';
+      mailId = r.mail_id || '—';
     } else if (['pri_data', 'sip_data', 'mmvc_data', 'mpls_data', 'nmect_data', 'toll_free'].includes(table)) {
       contactNo = r.telephone_no || '—';
     }
@@ -195,6 +207,8 @@ export const mapServiceRow = (r, table, isDOJ, isCollector, isNHM, isElection, c
     address = parsed.address;
     wanIp = parsed.wanIp;
     dateOfCommission = parsed.dateOfCommission;
+  } else if (table === 'eb_contacts') {
+    serviceType = r.service_type || '—';
   }
 
   return {
@@ -237,6 +251,8 @@ export const downloadServiceExcel = async (serviceName) => {
       query = query.or('customer_name.ilike.%collector%,customer_name.ilike.%collectorate%');
     } else if (isNHM) {
       query = query.or('customer_name.ilike.%nhm%,customer_name.ilike.%health%');
+    } else if (table === 'eb_contacts') {
+      query = query.eq('service_type', serviceName);
     }
 
     const [serviceRes, custRes] = await Promise.all([

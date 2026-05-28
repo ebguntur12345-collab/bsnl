@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, ChevronRight, Info, Loader2, Search, FileDown, FileUp, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Info, Loader2, Search, FileDown, FileUp, Trash2, Plus, Edit } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import * as XLSX from 'xlsx';
 import { importExcelData } from '../lib/excelImport';
@@ -79,6 +79,82 @@ const Contacts = () => {
     }));
 
     XLSX.writeFile(workbook, "EB_Contacts.xlsx");
+  };
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [modalData, setModalData] = useState({
+    enterprise_name: '',
+    circle: '',
+    name: '',
+    designation: '',
+    mobile: '',
+    mail_id: '',
+    ba_name: '',
+    service_type: ''
+  });
+  const [saving, setSaving] = useState(false);
+
+  const handleAddClick = () => {
+    setEditingId(null);
+    setModalData({
+      enterprise_name: '',
+      circle: '',
+      name: '',
+      designation: '',
+      mobile: '',
+      mail_id: '',
+      ba_name: '',
+      service_type: ''
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleEditClick = (contact) => {
+    setEditingId(contact.id);
+    setModalData({
+      enterprise_name: contact.enterprise_name || '',
+      circle: contact.circle || '',
+      name: contact.name || '',
+      designation: contact.designation || '',
+      mobile: contact.mobile || '',
+      mail_id: contact.mail_id || '',
+      ba_name: contact.ba_name || '',
+      service_type: contact.service_type || ''
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const payload = { ...modalData };
+      let res;
+      if (editingId) {
+        // Simulate update using DELETE + INSERT with the same ID because RLS blocks direct UPDATEs
+        const deleteRes = await supabase.from('eb_contacts').delete().eq('id', editingId);
+        if (deleteRes.error) {
+          res = deleteRes;
+        } else {
+          res = await supabase.from('eb_contacts').insert([{ id: editingId, ...payload }]);
+        }
+      } else {
+        res = await supabase.from('eb_contacts').insert([payload]);
+      }
+
+      if (res.error) {
+        alert('Error saving contact: ' + res.error.message);
+      } else {
+        setIsModalOpen(false);
+        fetchData();
+      }
+    } catch (err) {
+      console.error(err);
+      alert('An error occurred while saving.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const toggleRow = (id) => {
@@ -293,6 +369,16 @@ const Contacts = () => {
             />
           </div>
 
+          {/* Add Contact Button */}
+          <button
+            onClick={handleAddClick}
+            className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-emerald-500/20 hover:scale-[1.02] active:scale-[0.98] h-[46px]"
+            title="Add EB Contact"
+          >
+            <Plus size={16} />
+            <span>Add Contact</span>
+          </button>
+
           {/* Export Button */}
           <button
             onClick={downloadExcel}
@@ -365,7 +451,7 @@ const Contacts = () => {
                           {row[col.key]}
                         </td>
                       ))}
-                      <td className="px-6 py-4 text-center">
+                      <td className="px-6 py-4 text-center text-sm">
                         <div className="flex items-center justify-center gap-2">
                           <button 
                             onClick={() => toggleRow(rowId)} 
@@ -376,11 +462,18 @@ const Contacts = () => {
                             {expandedRows[rowId] ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
                           </button>
                           <button
+                            onClick={() => handleEditClick(row)}
+                            className="p-2 text-primary hover:bg-primary/10 rounded-xl transition-colors flex items-center justify-center"
+                            title="Edit EB Contact"
+                          >
+                            <Edit size={16} />
+                          </button>
+                          <button
                             onClick={() => handleDelete(row.id)}
-                            className="p-2 text-rose-500 hover:bg-rose-500/10 rounded-xl transition-colors"
+                            className="p-2 text-rose-500 hover:bg-rose-500/10 rounded-xl transition-colors flex items-center justify-center"
                             title="Delete EB Contact"
                           >
-                            <Trash2 size={18} />
+                            <Trash2 size={16} />
                           </button>
                         </div>
                       </td>
@@ -447,6 +540,74 @@ const Contacts = () => {
           </div>
         </div>
       </div>
+
+      {/* Dynamic Data Edit / Entry Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[999] p-4 animate-in fade-in duration-300">
+          <div className="bg-dark-card border border-dark-border rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl animate-in zoom-in duration-300 relative">
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-dark-border flex items-center justify-between">
+              <h3 className="text-white font-black text-sm uppercase tracking-wider">
+                {editingId ? 'Edit EB Contact' : 'Add New EB Contact'}
+              </h3>
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="text-gray-500 hover:text-white transition-colors text-xs font-bold uppercase tracking-widest"
+              >
+                Cancel
+              </button>
+            </div>
+            
+            {/* Modal Form */}
+            <form onSubmit={handleSave} className="p-6 space-y-5 max-h-[75vh] overflow-y-auto">
+              <div className="grid grid-cols-1 gap-4">
+                {[
+                  { key: 'enterprise_name', label: 'Enterprise/Company Name', required: true },
+                  { key: 'name', label: 'Contact Name', required: true },
+                  { key: 'designation', label: 'Designation' },
+                  { key: 'mobile', label: 'Mobile No', required: true },
+                  { key: 'mail_id', label: 'Mail ID' },
+                  { key: 'circle', label: 'Circle/State', required: true },
+                  { key: 'ba_name', label: 'BA Name/District', required: true },
+                  { key: 'service_type', label: 'Service Category/Type' },
+                ].map((f) => (
+                  <div key={f.key} className="flex flex-col space-y-1">
+                    <label className="text-[9px] font-black text-primary uppercase tracking-[0.2em] ml-1">
+                      {f.label} {f.required && <span className="text-rose-500">*</span>}
+                    </label>
+                    <input
+                      type="text"
+                      required={f.required}
+                      value={modalData[f.key] || ''}
+                      onChange={(e) => setModalData(prev => ({ ...prev, [f.key]: e.target.value }))}
+                      placeholder={`Enter ${f.label}`}
+                      className="w-full px-4 py-2.5 bg-dark-bg border border-dark-border rounded-xl text-sm text-white outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-gray-700"
+                    />
+                  </div>
+                ))}
+              </div>
+              
+              {/* Actions */}
+              <div className="flex justify-end gap-3 pt-4 border-t border-dark-border/40">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-5 py-2.5 bg-dark-bg border border-dark-border text-gray-400 hover:text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="px-5 py-2.5 bg-primary hover:bg-primary/95 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-primary/20 disabled:opacity-50"
+                >
+                  {saving ? 'Saving…' : 'Save Contact'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

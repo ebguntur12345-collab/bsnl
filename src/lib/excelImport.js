@@ -161,6 +161,17 @@ export const prepareServiceRow = (row, serviceName) => {
       billing_account_no: billingAccountNo,
       address: addressVal
     };
+  } else if (table === 'eb_contacts') {
+    return {
+      circle: location || '—',
+      designation: getVal(row, "Designation") || '—',
+      name: getVal(row, "Contact Name", "Name", "Primary Contact Name") || companyName || '—',
+      enterprise_name: companyName || '—',
+      mobile: contactNo || '—',
+      mail_id: mailId || '—',
+      ba_name: getVal(row, "BA Name", "BA", "District") || '—',
+      service_type: serviceName
+    };
   }
 
   return null;

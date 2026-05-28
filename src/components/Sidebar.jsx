@@ -66,7 +66,7 @@ const Sidebar = ({ isOpen, onClose }) => {
       route: '/leased-lines',
       hasDropdown: true,
       subItems: [
-        { name: 'CCT Registration', route: '/leased-lines/registration' }
+        { name: 'Employees Registration', route: '/leased-lines/registration' }
       ]
     },
     { 

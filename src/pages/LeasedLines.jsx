@@ -67,6 +67,68 @@ const LeasedLineCard = ({ title, value, icon: Icon, footerText = "Explore", to, 
     <div className="absolute -bottom-10 -left-10 w-24 h-24 bg-primary/5 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
   </div>
 );
+const iconMap = {
+  Zap,
+  RefreshCw,
+  Phone,
+  PhoneCall,
+  Server,
+  Building2,
+  Users,
+  Vote,
+  Leaf,
+  Stethoscope,
+  PhoneForwarded,
+  Laptop,
+  Keyboard,
+  Monitor,
+  CreditCard,
+  ShoppingCart,
+  CheckCircle
+};
+
+const getTableForMetric = (title, serviceType) => {
+  const t = (title || '').toLowerCase();
+  const s = (serviceType || '').toLowerCase();
+
+  if (t.includes('doj')) return { table: 'ill_data', filter: 'doj' };
+  if (t.includes('election')) return { table: 'toll_free', filter: 'election' };
+  if (t.includes('collector')) return { table: 'ill_data', filter: 'collector' };
+  if (t.includes('nhm')) return { table: 'ill_data', filter: 'nhm' };
+
+  if (t.includes('ill') || t.includes('leased line') || s.includes('ill') || s.includes('leased line')) {
+    return { table: 'ill_data' };
+  }
+  if (t.includes('pri') || s.includes('pri')) {
+    return { table: 'pri_data' };
+  }
+  if (t.includes('sip') || s.includes('sip')) {
+    return { table: 'sip_data' };
+  }
+  if (t.includes('mmvc') || s.includes('mmvc')) {
+    return { table: 'mmvc_data' };
+  }
+  if (t.includes('mpls') || s.includes('mpls')) {
+    return { table: 'mpls_data' };
+  }
+  if (t.includes('nmect') || s.includes('nmect')) {
+    return { table: 'nmect_data' };
+  }
+  if (t.includes('cggb') || s.includes('cggb')) {
+    return { table: 'cggb' };
+  }
+  if (t.includes('tobacco') || s.includes('tobacco')) {
+    return { table: 'tobacco_board' };
+  }
+  if (t.includes('nregs') || s.includes('nregs')) {
+    return { table: 'nregs' };
+  }
+  if (t.includes('toll') || s.includes('toll')) {
+    return { table: 'toll_free' };
+  }
+  
+  return { table: 'eb_contacts' }; // fallback table
+};
 
 const LeasedLines = () => {
   const [metrics, setMetrics] = useState([]);
@@ -76,58 +138,73 @@ const LeasedLines = () => {
     const fetchMetrics = async () => {
       setLoading(true);
       try {
-        const queries = [
-          // 0. ILL CCTs
-          supabase.from('ill_data').select('*', { count: 'exact', head: true }),
-          // 1. MPLS CCTs
-          supabase.from('mpls_data').select('*', { count: 'exact', head: true }),
-          // 2. ISDN PRI
-          supabase.from('pri_data').select('*', { count: 'exact', head: true }),
-          // 3. SIP Trunks
-          supabase.from('sip_data').select('*', { count: 'exact', head: true }),
-          // 4. MMVC
-          supabase.from('mmvc_data').select('*', { count: 'exact', head: true }),
-          // 5. NMECT CCTs
-          supabase.from('nmect_data').select('*', { count: 'exact', head: true }),
-          // 6. DOJ (Department of Justice)
-          supabase.from('ill_data').select('*', { count: 'exact', head: true }).or('customer_name.ilike.%doj%,customer_name.ilike.%justice%,customer_name.ilike.%court%'),
-          // 7. CGGB
-          supabase.from('cggb').select('*', { count: 'exact', head: true }),
-          // 8. Election Commission
-          supabase.from('toll_free').select('*', { count: 'exact', head: true }).or('customer_name.ilike.%election%,customer_name.ilike.%commission%'),
-          // 9. Tobacco Board
-          supabase.from('tobacco_board').select('*', { count: 'exact', head: true }),
-          // 10. NREGS
-          supabase.from('nregs').select('*', { count: 'exact', head: true }),
-          // 11. Collectorates
-          supabase.from('ill_data').select('*', { count: 'exact', head: true }).or('customer_name.ilike.%collector%,customer_name.ilike.%collectorate%'),
-          // 12. NHM (National Health Mission)
-          supabase.from('ill_data').select('*', { count: 'exact', head: true }).or('customer_name.ilike.%nhm%,customer_name.ilike.%health%'),
-          // 13. Toll FREE
-          supabase.from('toll_free').select('*', { count: 'exact', head: true })
-        ];
+        const { data: dbMetrics, error: dbError } = await supabase
+          .from('enterprise_metrics')
+          .select('*')
+          .order('created_at', { ascending: true });
 
-        const results = await Promise.all(queries);
-        const counts = results.map(r => r.error ? 0 : (r.count || 0));
+        if (dbError) throw dbError;
 
-        const defaults = [
-          { title: "ILL CCTs", value: `ILL ${counts[0]}`, service_type: "Internet Leased Line (ILL)", icon: Laptop, to: "/leased-lines/ill-576" },
-          { title: "MPLS CCTs", value: `MPLS ${counts[1]}`, service_type: "MPLS", icon: Server },
-          { title: "ISDN PRI", value: `ISDN ${counts[2]}`, service_type: "ISDN PRI", icon: Phone },
-          { title: "SIP Trunks", value: `SIP ${counts[3]}`, service_type: "SIP Trunk", icon: PhoneCall },
-          { title: "MMVC", value: `MMVC ${counts[4]}`, service_type: "MMVC", icon: Keyboard },
-          { title: "NMECT CCTs", value: `${counts[5]}`, service_type: "NMECT", icon: Monitor },
-          { title: "DOJ", value: `DOJ ${counts[6]}`, service_type: "Internet Leased Line (ILL)", icon: Building2, footerText: "Details" },
-          { title: "CGGB", value: `CGGB ${counts[7]}`, service_type: "CGGB", icon: Users, footerText: "Explore" },
-          { title: "Election Comission", value: `Election ${counts[8]}`, service_type: "Toll Free", icon: Vote },
-          { title: "Tobacco Board", value: `Tobacco ${counts[9]}`, service_type: "Tobacco Board", icon: Leaf },
-          { title: "NREGS", value: `NREGS ${counts[10]}`, service_type: "NREGS", icon: RefreshCw },
-          { title: "Collectorates", value: `Collectorates ${counts[11]}`, service_type: "Internet Leased Line (ILL)", icon: Building2, footerText: "Details" },
-          { title: "NHM", value: `NHM ${counts[12]}`, service_type: "NHM", icon: Stethoscope, footerText: "Details" },
-          { title: "Toll FREE", value: `Toll ${counts[13]}`, service_type: "Toll Free", icon: PhoneForwarded },
-        ];
+        const mappedMetrics = (dbMetrics || []).map(m => {
+          const IconComp = iconMap[m.icon_name] || Laptop;
+          const prefix = m.title.split(' ')[0] || '';
+          
+          let footerText = "Explore";
+          if (m.title.toLowerCase().includes('doj') || 
+              m.title.toLowerCase().includes('collector') || 
+              m.title.toLowerCase().includes('nhm')) {
+            footerText = "Details";
+          } else if (m.title.toLowerCase().includes('cggb')) {
+            footerText = "Explore";
+          }
 
-        setMetrics(defaults);
+          let toPath = `/leased-lines/users/${encodeURIComponent(m.service_type && m.service_type !== 'None' ? m.service_type : m.title)}`;
+          if (m.title === "ILL CCTs") {
+            toPath = "/leased-lines/ill-576";
+          }
+
+          return {
+            title: m.title,
+            prefix: prefix,
+            service_type: m.service_type,
+            icon: IconComp,
+            footerText: footerText,
+            to: toPath
+          };
+        });
+
+        const counts = await Promise.all(
+          mappedMetrics.map(async (item) => {
+            const { table, filter } = getTableForMetric(item.title, item.service_type);
+            try {
+              let query = supabase.from(table).select('*', { count: 'exact', head: true });
+              if (filter === 'doj') {
+                query = query.or('customer_name.ilike.%doj%,customer_name.ilike.%justice%,customer_name.ilike.%court%');
+              } else if (filter === 'election') {
+                query = query.or('customer_name.ilike.%election%,customer_name.ilike.%commission%');
+              } else if (filter === 'collector') {
+                query = query.or('customer_name.ilike.%collector%,customer_name.ilike.%collectorate%');
+              } else if (filter === 'nhm') {
+                query = query.or('customer_name.ilike.%nhm%,customer_name.ilike.%health%');
+              } else if (table === 'eb_contacts') {
+                query = query.eq('service_type', item.title);
+              }
+              const { count, error } = await query;
+              return error ? 0 : (count || 0);
+            } catch {
+              return 0;
+            }
+          })
+        );
+
+        setMetrics(mappedMetrics.map((m, idx) => {
+          const count = counts[idx];
+          const displayValue = m.title.toLowerCase().includes('nmect') ? `${count}` : `${m.prefix} ${count}`;
+          return {
+            ...m,
+            value: displayValue
+          };
+        }));
       } catch (err) {
         console.error('Error fetching live metrics:', err);
       } finally {

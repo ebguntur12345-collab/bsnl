@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Laptop, ChevronRight, ChevronDown, Info, ArrowLeft, Loader2, FileDown, FileUp } from 'lucide-react';
+import { Search, Laptop, ChevronRight, ChevronDown, Info, ArrowLeft, Loader2, FileDown, FileUp, Plus, Edit, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { downloadServiceExcel } from '../lib/excelExport';
@@ -15,6 +15,118 @@ const ILL576Users = () => {
   const [importing, setImporting] = useState(false);
   const [reloadTrigger, setReloadTrigger] = useState(0);
   const rowsPerPage = 10;
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [modalData, setModalData] = useState({
+    customer_name: '',
+    billing_ssa: '',
+    lc_id: '',
+    bandwidth: '',
+    billing_account_no: '',
+    phone_no: '',
+    email_address: '',
+    service_start_date: '',
+    last_mile: '',
+    address: ''
+  });
+  const [saving, setSaving] = useState(false);
+
+  const fields = [
+    { key: 'customer_name', label: 'Company / Customer Name', required: true },
+    { key: 'billing_ssa', label: 'Location (SSA)', required: true },
+    { key: 'lc_id', label: 'Circuit ID (LC ID)' },
+    { key: 'bandwidth', label: 'Plan / Bandwidth' },
+    { key: 'billing_account_no', label: 'Billing Account No' },
+    { key: 'phone_no', label: 'Contact No' },
+    { key: 'email_address', label: 'Mail ID' },
+    { key: 'service_start_date', label: 'Date of Commission' },
+    { key: 'last_mile', label: 'Last Mile' },
+    { key: 'address', label: 'Installation Address' },
+  ];
+
+  const handleAddClick = () => {
+    setEditingId(null);
+    setModalData({
+      customer_name: '',
+      billing_ssa: '',
+      lc_id: '',
+      bandwidth: '',
+      billing_account_no: '',
+      phone_no: '',
+      email_address: '',
+      service_start_date: '',
+      last_mile: '',
+      address: ''
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleEditClick = (user) => {
+    setEditingId(user.id);
+    setModalData({
+      customer_name: user._raw?.customer_name || user.companyName || '',
+      billing_ssa: user._raw?.billing_ssa || user.location || '',
+      lc_id: user._raw?.lc_id || user.circuitId || '',
+      bandwidth: user._raw?.bandwidth || user.plan || '',
+      billing_account_no: user._raw?.billing_account_no || user.billingAccountNo || '',
+      phone_no: user._raw?.phone_no || user.contactNo || '',
+      email_address: user._raw?.email_address || user.mailId || '',
+      service_start_date: user._raw?.service_start_date || user.dateOfCommission || '',
+      last_mile: user._raw?.last_mile || '',
+      address: user._raw?.address || user.address || ''
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteClick = async (user) => {
+    if (!window.confirm(`Are you sure you want to delete this ILL connection?`)) return;
+    try {
+      const { error } = await supabase
+        .from('ill_data')
+        .delete()
+        .eq('id', user.id);
+      if (error) {
+        alert('Error deleting connection: ' + error.message);
+      } else {
+        setReloadTrigger(prev => prev + 1);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const payload = { ...modalData };
+      let res;
+      if (editingId) {
+        // Simulate update using DELETE + INSERT with the same ID because RLS blocks direct UPDATEs
+        const deleteRes = await supabase.from('ill_data').delete().eq('id', editingId);
+        if (deleteRes.error) {
+          res = deleteRes;
+        } else {
+          res = await supabase.from('ill_data').insert([{ id: editingId, ...payload }]);
+        }
+      } else {
+        res = await supabase.from('ill_data').insert([payload]);
+      }
+
+      if (res.error) {
+        alert('Error saving connection: ' + res.error.message);
+      } else {
+        setIsModalOpen(false);
+        setReloadTrigger(prev => prev + 1);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('An error occurred while saving.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleImportExcel = async (e) => {
     const file = e.target.files?.[0];
@@ -169,6 +281,15 @@ const ILL576Users = () => {
         {/* Search & Actions */}
         <div className="flex items-center gap-3">
           <button
+            onClick={handleAddClick}
+            className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-emerald-500/20 hover:scale-[1.02] active:scale-[0.98]"
+            title="Add Connection"
+          >
+            <Plus size={16} />
+            <span>Add Connection</span>
+          </button>
+
+          <button
             onClick={() => downloadServiceExcel('Internet Leased Line (ILL)')}
             className="flex items-center gap-2 bg-primary hover:bg-primary/95 text-white px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98]"
             title="Download Excel"
@@ -230,7 +351,7 @@ const ILL576Users = () => {
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-gradient-to-r from-blue-600 to-cyan-500 text-white">
-              {['#', 'Company / Customer', 'Location', 'Circuit ID', 'Plan', 'Contact No', 'Details'].map(h => (
+              {['#', 'Company / Customer', 'Location', 'Circuit ID', 'Plan', 'Contact No', 'Actions', 'Details'].map(h => (
                 <th key={h} className="px-5 py-3.5 font-black text-[11px] uppercase tracking-widest border-r border-white/10 last:border-r-0 last:text-center">{h}</th>
               ))}
             </tr>
@@ -238,7 +359,7 @@ const ILL576Users = () => {
           <tbody className="bg-dark-card divide-y divide-dark-border">
             {loading ? (
               <tr>
-                <td colSpan="7" className="px-5 py-20 text-center">
+                <td colSpan="8" className="px-5 py-20 text-center">
                   <Loader2 size={32} className="animate-spin text-primary mx-auto" />
                 </td>
               </tr>
@@ -261,6 +382,24 @@ const ILL576Users = () => {
                       </td>
                       <td className="px-5 py-4 text-sm text-gray-400">{user.plan || '—'}</td>
                       <td className="px-5 py-4 text-sm text-gray-400">{user.contactNo || '—'}</td>
+                      <td className="px-5 py-4 text-sm">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleEditClick(user)}
+                            className="p-1.5 text-cyan-400 hover:bg-cyan-500/10 rounded-lg transition-colors flex items-center justify-center"
+                            title="Edit connection"
+                          >
+                            <Edit size={14} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteClick(user)}
+                            className="p-1.5 text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors flex items-center justify-center"
+                            title="Delete connection"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </td>
                       <td className="px-5 py-4 text-center">
                         <button
                           onClick={() => toggleRow(rowId)}
@@ -274,7 +413,7 @@ const ILL576Users = () => {
                     {/* Expanded Row */}
                     {expandedRows[rowId] && (
                       <tr className="bg-dark-bg/50">
-                        <td colSpan="7" className="px-8 py-6 border-b border-dark-border">
+                        <td colSpan="8" className="px-8 py-6 border-b border-dark-border">
                           <div className="flex items-center gap-2 mb-4">
                             <Info size={15} className="text-cyan-400" />
                             <h4 className="font-black text-cyan-400 text-xs uppercase tracking-widest">Full Circuit Details</h4>
@@ -301,7 +440,7 @@ const ILL576Users = () => {
               })
             ) : (
               <tr>
-                <td colSpan="7" className="px-5 py-24 text-center">
+                <td colSpan="8" className="px-5 py-24 text-center">
                   <div className="flex flex-col items-center gap-4">
                     <div className="w-16 h-16 rounded-2xl bg-dark-bg border border-dark-border flex items-center justify-center">
                       <Laptop size={32} className="text-gray-700" />
@@ -339,6 +478,65 @@ const ILL576Users = () => {
           </div>
         </div>
       </div>
+
+      {/* Dynamic Data Edit / Entry Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[999] p-4 animate-in fade-in duration-300">
+          <div className="bg-dark-card border border-dark-border rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl animate-in zoom-in duration-300 relative">
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-dark-border flex items-center justify-between">
+              <h3 className="text-white font-black text-sm uppercase tracking-wider">
+                {editingId ? `Edit ILL Connection` : `Add New ILL Connection`}
+              </h3>
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="text-gray-500 hover:text-white transition-colors text-xs font-bold uppercase tracking-widest"
+              >
+                Cancel
+              </button>
+            </div>
+            
+            {/* Modal Form */}
+            <form onSubmit={handleSave} className="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {fields.map((f) => (
+                  <div key={f.key} className="flex flex-col space-y-1.5">
+                    <label className="text-[9px] font-black text-cyan-400 uppercase tracking-[0.2em] ml-1">
+                      {f.label} {f.required && <span className="text-rose-500">*</span>}
+                    </label>
+                    <input
+                      type="text"
+                      required={f.required}
+                      value={modalData[f.key] || ''}
+                      onChange={(e) => setModalData(prev => ({ ...prev, [f.key]: e.target.value }))}
+                      placeholder={`Enter ${f.label}`}
+                      className="w-full px-4 py-2.5 bg-dark-bg border border-dark-border rounded-xl text-sm text-white outline-none focus:ring-2 focus:ring-cyan-400/20 transition-all placeholder:text-gray-700 disabled:opacity-50"
+                    />
+                  </div>
+                ))}
+              </div>
+              
+              {/* Actions */}
+              <div className="flex justify-end gap-3 pt-4 border-t border-dark-border/40">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-5 py-2.5 bg-dark-bg border border-dark-border text-gray-400 hover:text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="px-5 py-2.5 bg-cyan-500 hover:bg-cyan-600 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-cyan-500/20 disabled:opacity-50"
+                >
+                  {saving ? 'Saving…' : 'Save Connection'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

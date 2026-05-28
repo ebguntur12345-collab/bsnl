@@ -1,13 +1,162 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Search, Laptop, ChevronRight, ChevronDown, Info, ArrowLeft, Users, Zap, Phone, Globe, Loader2, RefreshCw, FileDown, FileUp } from 'lucide-react';
+import { Search, Laptop, ChevronRight, ChevronDown, Info, ArrowLeft, Users, Zap, Phone, Globe, Loader2, RefreshCw, FileDown, FileUp, Plus, Edit, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { downloadServiceExcel } from '../lib/excelExport';
 import { importExcelData } from '../lib/excelImport';
 
+const getTableInfo = (serviceName) => {
+  const target = serviceName.toLowerCase();
+  let table = 'eb_contacts';
+  const isDOJ = target.includes('doj');
+  const isElection = target.includes('election');
+  const isCollector = target.includes('collector');
+  const isNHM = target.includes('nhm');
+  
+  if (isDOJ) table = 'ill_data';
+  else if (isElection) table = 'toll_free';
+  else if (isCollector) table = 'ill_data';
+  else if (isNHM) table = 'ill_data';
+  else if (target.includes('ill') || target.includes('leased line')) table = 'ill_data';
+  else if (target.includes('pri')) table = 'pri_data';
+  else if (target.includes('sip')) table = 'sip_data';
+  else if (target.includes('mmvc')) table = 'mmvc_data';
+  else if (target.includes('mpls')) table = 'mpls_data';
+  else if (target.includes('nmect')) table = 'nmect_data';
+  else if (target.includes('cggb')) table = 'cggb';
+  else if (target.includes('tobacco')) table = 'tobacco_board';
+  else if (target.includes('nregs')) table = 'nregs';
+  else if (target.includes('toll')) table = 'toll_free';
+
+  return { table, isDOJ, isElection, isCollector, isNHM };
+};
+
+const getFieldsForTable = (table, serviceName) => {
+  if (table === 'ill_data') {
+    return [
+      { key: 'customer_name', label: 'Company / Customer Name', required: true },
+      { key: 'billing_ssa', label: 'Location (SSA)', required: true },
+      { key: 'lc_id', label: 'Circuit ID (LC ID)' },
+      { key: 'bandwidth', label: 'Plan / Bandwidth' },
+      { key: 'billing_account_no', label: 'Billing Account No' },
+      { key: 'phone_no', label: 'Contact No' },
+      { key: 'email_address', label: 'Mail ID' },
+      { key: 'service_start_date', label: 'Date of Commission' },
+      { key: 'last_mile', label: 'Last Mile' },
+      { key: 'address', label: 'Installation Address' },
+    ];
+  }
+  if (table === 'pri_data') {
+    return [
+      { key: 'customer_name', label: 'Company / Customer Name', required: true },
+      { key: 'telephone_no', label: 'Telephone No', required: true },
+      { key: 'pri_plan', label: 'PRI Plan' },
+      { key: 'billing_account_no', label: 'Billing Account No' },
+      { key: 'address', label: 'Installation Address' },
+    ];
+  }
+  if (table === 'sip_data') {
+    return [
+      { key: 'customer_name', label: 'Company / Customer Name', required: true },
+      { key: 'telephone_no', label: 'Telephone No', required: true },
+      { key: 'sip_plan', label: 'SIP Plan' },
+      { key: 'billing_account_no', label: 'Billing Account No' },
+      { key: 'address', label: 'Installation Address' },
+    ];
+  }
+  if (table === 'mmvc_data') {
+    return [
+      { key: 'customer_name', label: 'Company / Customer Name', required: true },
+      { key: 'telephone_no', label: 'Telephone No', required: true },
+      { key: 'mmv_plan', label: 'MMV Plan' },
+      { key: 'billing_account_no', label: 'Billing Account No' },
+      { key: 'address', label: 'Installation Address' },
+    ];
+  }
+  if (table === 'mpls_data') {
+    return [
+      { key: 'customer_name', label: 'Company / Customer Name', required: true },
+      { key: 'telephone_no', label: 'Telephone No' },
+      { key: 'bandwidth', label: 'Bandwidth' },
+      { key: 'billing_account_no', label: 'Billing Account No' },
+      { key: 'address', label: 'Installation Address' },
+    ];
+  }
+  if (table === 'nmect_data') {
+    return [
+      { key: 'customer_name', label: 'Company / Customer Name', required: true },
+      { key: 'telephone_no', label: 'Telephone No', required: true },
+      { key: 'bandwidth', label: 'Bandwidth' },
+      { key: 'nmect_plan', label: 'NMECT Plan' },
+      { key: 'billing_account_no', label: 'Billing Account No' },
+      { key: 'address', label: 'Installation Address' },
+    ];
+  }
+  if (table === 'cggb') {
+    return [
+      { key: 'name', label: 'Company / Customer Name', required: true },
+      { key: 'oa', label: 'Location (OA)' },
+      { key: 'circuit_id', label: 'Circuit ID' },
+      { key: 'bandwidth', label: 'Bandwidth' },
+      { key: 'billing_account', label: 'Billing Account' },
+      { key: 'wan_ip', label: 'WAN IP' },
+      { key: 'field_incharge_name', label: 'Field Incharge Name' },
+      { key: 'field_incharge_number', label: 'Field Incharge Number' },
+    ];
+  }
+  if (table === 'tobacco_board') {
+    return [
+      { key: 'location', label: 'Tobacco Board Location', required: true },
+      { key: 'circle', label: 'Circle' },
+      { key: 'ba_name', label: 'BA Name' },
+      { key: 'lc_id', label: 'LC ID' },
+      { key: 'bandwidth', label: 'Bandwidth' },
+      { key: 'billing_account', label: 'Billing Account' },
+      { key: 'contact_no', label: 'Contact No' },
+      { key: 'eb_incharge', label: 'EB Incharge' },
+      { key: 'bbm_incharge', label: 'BBM Incharge' },
+      { key: 'bbm_contact', label: 'BBM Contact' },
+    ];
+  }
+  if (table === 'nregs') {
+    return [
+      { key: 'computer_operator_name', label: 'Computer Operator Name', required: true },
+      { key: 'mandal', label: 'Mandal' },
+      { key: 'district', label: 'District' },
+      { key: 'telephone_no', label: 'Telephone No' },
+      { key: 'contact_no', label: 'Contact No' },
+      { key: 'bbm_no', label: 'BBM No' },
+      { key: 'tip_no', label: 'TIP No' },
+      { key: 'drp_contact_no', label: 'DRP Contact No' },
+    ];
+  }
+  if (table === 'toll_free') {
+    return [
+      { key: 'customer_name', label: 'Company / Customer Name', required: true },
+      { key: 'telephone_no', label: 'Telephone No', required: true },
+      { key: 'billing_account_no', label: 'Billing Account No' },
+      { key: 'address', label: 'Installation Address' },
+    ];
+  }
+  return [
+    { key: 'enterprise_name', label: 'Enterprise/Company Name', required: true },
+    { key: 'name', label: 'Contact Person Name', required: true },
+    { key: 'designation', label: 'Designation' },
+    { key: 'mobile', label: 'Contact/Mobile No', required: true },
+    { key: 'mail_id', label: 'Email ID' },
+    { key: 'circle', label: 'Circle/Location' },
+    { key: 'ba_name', label: 'BA Name/District' },
+    { key: 'service_type', label: 'Service Category', required: true, value: serviceName, readOnly: true },
+  ];
+};
+
 const ServiceUsers = () => {
   const { serviceType } = useParams();
   const navigate = useNavigate();
+  
+  // Human-readable title mapping
+  const decodedService = decodeURIComponent(serviceType);
+
   const [users, setUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedRows, setExpandedRows] = useState({});
@@ -16,6 +165,86 @@ const ServiceUsers = () => {
   const [importing, setImporting] = useState(false);
   const [reloadTrigger, setReloadTrigger] = useState(0);
   const rowsPerPage = 10;
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [modalData, setModalData] = useState({});
+  const [saving, setSaving] = useState(false);
+
+  const { table } = getTableInfo(decodedService);
+  const fields = getFieldsForTable(table, decodedService);
+
+  const handleAddClick = () => {
+    setEditingId(null);
+    const initial = {};
+    fields.forEach(f => {
+      initial[f.key] = f.value !== undefined ? f.value : '';
+    });
+    setModalData(initial);
+    setIsModalOpen(true);
+  };
+
+  const handleEditClick = (user) => {
+    setEditingId(user.id);
+    setModalData({ ...user._raw });
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteClick = async (user) => {
+    if (!window.confirm(`Are you sure you want to delete this connection?`)) return;
+    try {
+      const { error } = await supabase
+        .from(table)
+        .delete()
+        .eq('id', user.id);
+      if (error) {
+        alert('Error deleting connection: ' + error.message);
+      } else {
+        setReloadTrigger(prev => prev + 1);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const payload = { ...modalData };
+      delete payload.id;
+      delete payload.created_at;
+
+      if (table === 'eb_contacts') {
+        payload.service_type = decodedService;
+      }
+
+      let res;
+      if (editingId) {
+        // Simulate update using DELETE + INSERT with the same ID because RLS blocks direct UPDATEs
+        const deleteRes = await supabase.from(table).delete().eq('id', editingId);
+        if (deleteRes.error) {
+          res = deleteRes;
+        } else {
+          res = await supabase.from(table).insert([{ id: editingId, ...payload }]);
+        }
+      } else {
+        res = await supabase.from(table).insert([payload]);
+      }
+
+      if (res.error) {
+        alert('Error saving connection: ' + res.error.message);
+      } else {
+        setIsModalOpen(false);
+        setReloadTrigger(prev => prev + 1);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('An error occurred while saving.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleImportExcel = async (e) => {
     const file = e.target.files?.[0];
@@ -35,8 +264,7 @@ const ServiceUsers = () => {
     }
   };
 
-  // Human-readable title mapping
-  const decodedService = decodeURIComponent(serviceType);
+  
   
   useEffect(() => {
     setCurrentPage(1);
@@ -44,7 +272,7 @@ const ServiceUsers = () => {
       setLoading(true);
       try {
         const target = decodedService.toLowerCase();
-        let table = 'customers_data';
+        let table = 'eb_contacts';
         const isDOJ = target.includes('doj');
         const isElection = target.includes('election');
         const isCollector = target.includes('collector');
@@ -75,6 +303,8 @@ const ServiceUsers = () => {
           query = query.or('customer_name.ilike.%collector%,customer_name.ilike.%collectorate%');
         } else if (isNHM) {
           query = query.or('customer_name.ilike.%nhm%,customer_name.ilike.%health%');
+        } else if (table === 'eb_contacts') {
+          query = query.eq('service_type', decodedService);
         }
 
         const { data, error } = await query.order('id', { ascending: true });
@@ -313,6 +543,30 @@ const ServiceUsers = () => {
                   { label: 'Full Site Address', value: r.address || '—' },
                 ]
               };
+            } else if (table === 'eb_contacts') {
+              return {
+                id: r.id,
+                companyName: r.enterprise_name || '—',
+                mailId: r.mail_id || '—',
+                location: r.ba_name ? `${r.ba_name} (${r.circle || '—'})` : (r.circle || '—'),
+                circuitId: '—',
+                plan: '—',
+                contactNo: r.mobile || '—',
+                billingAccountNo: '—',
+                dateOfCommission: '—',
+                address: '—',
+                serviceType: r.service_type || decodedService,
+                detailFields: [
+                  { label: 'Service Category', value: r.service_type || decodedService },
+                  { label: 'Enterprise Name', value: r.enterprise_name || '—' },
+                  { label: 'Contact Person Name', value: r.name || '—' },
+                  { label: 'Designation', value: r.designation || '—' },
+                  { label: 'Email ID', value: r.mail_id || '—' },
+                  { label: 'Circle/Location', value: r.circle || '—' },
+                  { label: 'BA Name/District', value: r.ba_name || '—' },
+                  { label: 'Mobile No', value: r.mobile || '—' },
+                ]
+              };
             } else {
               return {
                 id: r.id,
@@ -338,7 +592,8 @@ const ServiceUsers = () => {
               };
             }
           });
-          setUsers(mapped);
+          const mappedWithRaw = mapped.map((m, idx) => ({ ...m, _raw: data[idx] }));
+          setUsers(mappedWithRaw);
         }
       } finally {
         setLoading(false);
@@ -457,6 +712,15 @@ const ServiceUsers = () => {
         {/* Search & Actions */}
         <div className="flex items-center gap-3">
           <button
+            onClick={handleAddClick}
+            className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-emerald-500/20 hover:scale-[1.02] active:scale-[0.98]"
+            title="Add Connection"
+          >
+            <Plus size={16} />
+            <span>Add Connection</span>
+          </button>
+
+          <button
             onClick={() => downloadServiceExcel(decodedService)}
             className="flex items-center gap-2 bg-primary hover:bg-primary/95 text-white px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98]"
             title="Download Excel"
@@ -519,7 +783,7 @@ const ServiceUsers = () => {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-dark-bg/50 text-gray-500 border-b border-dark-border">
-                {['#', 'Company / Customer', 'Location', 'Circuit ID / Phone', 'Plan / Bandwidth', 'Contact No', 'Details'].map(h => (
+                {['#', 'Company / Customer', 'Location', 'Circuit ID / Phone', 'Plan / Bandwidth', 'Contact No', 'Actions', 'Details'].map(h => (
                   <th key={h} className="px-5 py-4 font-black text-[10px] uppercase tracking-widest">{h}</th>
                 ))}
               </tr>
@@ -527,7 +791,7 @@ const ServiceUsers = () => {
             <tbody className="divide-y divide-dark-border/30">
               {loading ? (
                 <tr>
-                  <td colSpan="7" className="px-5 py-20 text-center">
+                  <td colSpan="8" className="px-5 py-20 text-center">
                     <Loader2 size={32} className="animate-spin text-primary mx-auto" />
                   </td>
                 </tr>
@@ -550,6 +814,24 @@ const ServiceUsers = () => {
                         </td>
                         <td className="px-5 py-4 text-sm text-gray-400 font-medium">{user.plan || '—'}</td>
                         <td className="px-5 py-4 text-sm text-gray-400 font-medium">{user.contactNo || '—'}</td>
+                        <td className="px-5 py-4 text-sm">
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleEditClick(user)}
+                              className="p-1.5 text-primary hover:bg-primary/10 rounded-lg transition-colors flex items-center justify-center"
+                              title="Edit connection"
+                            >
+                              <Edit size={14} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteClick(user)}
+                              className="p-1.5 text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors flex items-center justify-center"
+                              title="Delete connection"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </td>
                         <td className="px-5 py-4 text-center">
                           <button
                             onClick={() => toggleRow(rowId)}
@@ -563,7 +845,7 @@ const ServiceUsers = () => {
                       {/* Expanded Row */}
                       {expandedRows[rowId] && (
                         <tr className="bg-dark-bg/30">
-                          <td colSpan="7" className="px-10 py-8 border-b border-dark-border/50">
+                          <td colSpan="8" className="px-10 py-8 border-b border-dark-border/50">
                             <div className="flex items-center gap-2 mb-6">
                               <Info size={14} className="text-primary" />
                               <h4 className="font-black text-primary text-[10px] uppercase tracking-[0.2em]">Full Circuit Specifications</h4>
@@ -590,7 +872,7 @@ const ServiceUsers = () => {
                 })
               ) : (
                 <tr>
-                  <td colSpan="7" className="px-5 py-32 text-center">
+                  <td colSpan="8" className="px-5 py-32 text-center">
                     <div className="flex flex-col items-center gap-4">
                       <div className="w-20 h-20 rounded-3xl bg-dark-bg border border-dark-border flex items-center justify-center">
                         <Users size={32} className="text-gray-700" />
@@ -632,6 +914,66 @@ const ServiceUsers = () => {
           </div>
         </div>
       </div>
+
+      {/* Dynamic Data Edit / Entry Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[999] p-4 animate-in fade-in duration-300">
+          <div className="bg-dark-card border border-dark-border rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl animate-in zoom-in duration-300 relative">
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-dark-border flex items-center justify-between">
+              <h3 className="text-white font-black text-sm uppercase tracking-wider">
+                {editingId ? `Edit ${decodedService} Connection` : `Add New ${decodedService} Connection`}
+              </h3>
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="text-gray-500 hover:text-white transition-colors text-xs font-bold uppercase tracking-widest"
+              >
+                Cancel
+              </button>
+            </div>
+            
+            {/* Modal Form */}
+            <form onSubmit={handleSave} className="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {fields.map((f) => (
+                  <div key={f.key} className="flex flex-col space-y-1.5">
+                    <label className="text-[9px] font-black text-primary uppercase tracking-[0.2em] ml-1">
+                      {f.label} {f.required && <span className="text-rose-500">*</span>}
+                    </label>
+                    <input
+                      type="text"
+                      required={f.required}
+                      disabled={f.readOnly}
+                      value={modalData[f.key] || ''}
+                      onChange={(e) => setModalData(prev => ({ ...prev, [f.key]: e.target.value }))}
+                      placeholder={`Enter ${f.label}`}
+                      className="w-full px-4 py-2.5 bg-dark-bg border border-dark-border rounded-xl text-sm text-white outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-gray-700 disabled:opacity-50"
+                    />
+                  </div>
+                ))}
+              </div>
+              
+              {/* Actions */}
+              <div className="flex justify-end gap-3 pt-4 border-t border-dark-border/40">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-5 py-2.5 bg-dark-bg border border-dark-border text-gray-400 hover:text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="px-5 py-2.5 bg-primary hover:bg-primary/95 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-primary/20 disabled:opacity-50"
+                >
+                  {saving ? 'Saving…' : 'Save Connection'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
