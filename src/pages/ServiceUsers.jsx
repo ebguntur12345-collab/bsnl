@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Search, Laptop, ChevronRight, ChevronDown, Info, ArrowLeft, Users, Zap, Phone, Globe, Loader2, RefreshCw, FileDown } from 'lucide-react';
+import { Search, Laptop, ChevronRight, ChevronDown, Info, ArrowLeft, Users, Zap, Phone, Globe, Loader2, RefreshCw, FileDown, FileUp } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { downloadServiceExcel } from '../lib/excelExport';
+import { importExcelData } from '../lib/excelImport';
 
 const ServiceUsers = () => {
   const { serviceType } = useParams();
@@ -12,7 +13,27 @@ const ServiceUsers = () => {
   const [expandedRows, setExpandedRows] = useState({});
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [importing, setImporting] = useState(false);
+  const [reloadTrigger, setReloadTrigger] = useState(0);
   const rowsPerPage = 10;
+
+  const handleImportExcel = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImporting(true);
+    try {
+      const result = await importExcelData(file, 'service_users', decodedService);
+      alert(`Successfully imported ${result.count} connections and registered ${result.customerCount} customer contacts!`);
+      setReloadTrigger(prev => prev + 1);
+    } catch (err) {
+      console.error(err);
+      alert(`Import failed: ${err.message || err}`);
+    } finally {
+      setImporting(false);
+      e.target.value = '';
+    }
+  };
 
   // Human-readable title mapping
   const decodedService = decodeURIComponent(serviceType);
@@ -324,7 +345,7 @@ const ServiceUsers = () => {
       }
     };
     fetchServiceData();
-  }, [decodedService]);
+  }, [decodedService, reloadTrigger]);
 
   const toggleRow = (id) => {
     setExpandedRows(prev => ({ ...prev, [id]: !prev[id] }));
@@ -442,6 +463,28 @@ const ServiceUsers = () => {
           >
             <FileDown size={16} />
             <span>Export</span>
+          </button>
+
+          {/* Import Button */}
+          <input
+            type="file"
+            id="import-excel-input"
+            accept=".xlsx, .xls"
+            onChange={handleImportExcel}
+            className="hidden"
+          />
+          <button
+            onClick={() => document.getElementById('import-excel-input').click()}
+            disabled={importing}
+            className="flex items-center gap-2 bg-dark-card border border-dark-border hover:border-primary/50 text-gray-300 hover:text-white px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Upload/Import Excel"
+          >
+            {importing ? (
+              <Loader2 size={16} className="animate-spin text-primary" />
+            ) : (
+              <FileUp size={16} className="text-primary" />
+            )}
+            <span>{importing ? 'Importing…' : 'Import'}</span>
           </button>
           <div className="relative">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />

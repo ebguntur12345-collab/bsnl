@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Search, UserPlus, Trash2, ChevronDown, ChevronRight, Info, Loader2, FileDown } from 'lucide-react';
+import { Search, UserPlus, Trash2, ChevronDown, ChevronRight, Info, Loader2, FileDown, FileUp } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import * as XLSX from 'xlsx';
+import { importExcelData } from '../lib/excelImport';
 
 const CustomerContacts = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -11,7 +12,26 @@ const CustomerContacts = () => {
   const [loadingDetails, setLoadingDetails] = useState({});
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [importing, setImporting] = useState(false);
   const rowsPerPage = 10;
+
+  const handleImportExcel = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImporting(true);
+    try {
+      const result = await importExcelData(file, 'customer_contacts');
+      alert(`Successfully imported ${result.count} customer contacts!${result.serviceCount ? ` And provisioned ${result.serviceCount} service connections.` : ''}`);
+      loadContacts();
+    } catch (err) {
+      console.error(err);
+      alert(`Import failed: ${err.message || err}`);
+    } finally {
+      setImporting(false);
+      e.target.value = '';
+    }
+  };
 
   const parseAddressForExport = (fullAddress) => {
     if (!fullAddress) return { address: '—', wanIp: '—', dateOfCommission: '—' };
@@ -593,6 +613,27 @@ const CustomerContacts = () => {
           >
             <FileDown size={14} />
             <span>Export</span>
+          </button>
+
+          <input
+            type="file"
+            id="import-excel-input"
+            accept=".xlsx, .xls"
+            onChange={handleImportExcel}
+            className="hidden"
+          />
+          <button
+            onClick={() => document.getElementById('import-excel-input').click()}
+            disabled={importing}
+            className="flex items-center gap-2 bg-dark-card border border-dark-border hover:border-primary/50 text-gray-300 hover:text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-[0.98] h-[38px] disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Upload/Import Excel"
+          >
+            {importing ? (
+              <Loader2 size={14} className="animate-spin text-primary" />
+            ) : (
+              <FileUp size={14} className="text-primary" />
+            )}
+            <span>{importing ? 'Importing…' : 'Import'}</span>
           </button>
           <div className="relative">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />

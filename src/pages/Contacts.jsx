@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, ChevronRight, Info, Loader2, Search, FileDown, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Info, Loader2, Search, FileDown, FileUp, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import * as XLSX from 'xlsx';
+import { importExcelData } from '../lib/excelImport';
 
 const columns = [
   { header: '#',           key: 'id' },
@@ -23,7 +24,26 @@ const Contacts = () => {
   const [allData, setAllData]                = useState([]);
   const [expandedRows, setExpandedRows]      = useState({});
   const [loading, setLoading]                = useState(false);
+  const [importing, setImporting]            = useState(false);
   const rowsPerPage = 10;
+
+  const handleImportExcel = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImporting(true);
+    try {
+      const result = await importExcelData(file, 'eb_contacts');
+      alert(`Successfully imported ${result.count} EB contacts!`);
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      alert(`Import failed: ${err.message || err}`);
+    } finally {
+      setImporting(false);
+      e.target.value = '';
+    }
+  };
 
   const downloadExcel = () => {
     if (filteredData.length === 0) {
@@ -281,6 +301,28 @@ const Contacts = () => {
           >
             <FileDown size={16} />
             <span>Export</span>
+          </button>
+
+          {/* Import Button */}
+          <input
+            type="file"
+            id="import-excel-input"
+            accept=".xlsx, .xls"
+            onChange={handleImportExcel}
+            className="hidden"
+          />
+          <button
+            onClick={() => document.getElementById('import-excel-input').click()}
+            disabled={importing}
+            className="flex items-center gap-2 bg-dark-card border border-dark-border hover:border-primary/50 text-gray-300 hover:text-white px-5 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-[0.98] h-[46px] disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Upload/Import Excel"
+          >
+            {importing ? (
+              <Loader2 size={16} className="animate-spin text-primary" />
+            ) : (
+              <FileUp size={16} className="text-primary" />
+            )}
+            <span>{importing ? 'Importing…' : 'Import'}</span>
           </button>
         </div>
       </div>
