@@ -346,15 +346,24 @@ const AdminDashboard = () => {
     setIsAddingMetric(true);
     
     // Auto-detect service type from title
+    // Cards with their own dedicated tables/filters must stay as 'None'
+    // so routing falls back to the card title (which ServiceUsers.jsx uses for detection)
     let detectedService = 'None';
     const t = newMetric.title.toUpperCase();
-    if (t.includes('ILL')) detectedService = 'Internet Leased Line (ILL)';
-    else if (t.includes('MPLS')) detectedService = 'MPLS';
-    else if (t.includes('SIP')) detectedService = 'SIP Trunk';
-    else if (t.includes('PRI')) detectedService = 'ISDN PRI';
-    else if (t.includes('FTTH')) detectedService = 'FTTH';
-    else if (t.includes('MMVC')) detectedService = 'MMVC';
-    else if (t.includes('TOLL')) detectedService = 'Toll Free';
+    const isSpecialView =
+      t.includes('NREGS') || t.includes('NHM') || t.includes('CGGB') ||
+      t.includes('TOBACCO') || t.includes('DOJ') || t.includes('COLLECTOR') ||
+      t.includes('ELECTION');
+    if (!isSpecialView) {
+      if (t.includes('ILL') || t.includes('LEASED LINE')) detectedService = 'Internet Leased Line (ILL)';
+      else if (t.includes('MPLS')) detectedService = 'MPLS';
+      else if (t.includes('SIP')) detectedService = 'SIP Trunk';
+      else if (t.includes('PRI')) detectedService = 'ISDN PRI';
+      else if (t.includes('FTTH')) detectedService = 'FTTH';
+      else if (t.includes('MMVC')) detectedService = 'MMVC';
+      else if (t.includes('TOLL')) detectedService = 'Toll Free';
+      else if (t.includes('NMECT')) detectedService = 'None';
+    }
     
     try {
       if (editingMetric) {

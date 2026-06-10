@@ -39,6 +39,8 @@ export const getServiceTableInfo = (serviceName) => {
     table = 'tobacco_board';
   } else if (target.includes('nregs')) {
     table = 'nregs';
+  } else if (target.includes('ftth')) {
+    table = 'ftth_data';
   } else if (target.includes('toll')) {
     table = 'toll_free';
   }
@@ -117,6 +119,10 @@ export const mapServiceRow = (r, table, isDOJ, isCollector, isNHM, isElection, c
     } else if (table === 'nregs') {
       location = r.mandal ? `${r.mandal}, ${r.district || '—'}` : (r.district || '—');
       contactNo = r.contact_no || '—';
+    } else if (table === 'ftth_data') {
+      location = r.area || '—';
+      contactNo = r.phone_no || '—';
+      mailId = r.email_address || '—';
     } else if (table === 'eb_contacts') {
       location = r.circle ? `${r.circle} (${r.ba_name || '—'})` : (r.ba_name || '—');
       contactName = r.name || '—';
@@ -199,6 +205,13 @@ export const mapServiceRow = (r, table, isDOJ, isCollector, isNHM, isElection, c
     serviceType = 'NREGS';
     plan = r.bbm_no ? `BBM: ${r.bbm_no}` : (r.tip_no ? `TIP: ${r.tip_no}` : '—');
     circuitId = r.telephone_no || '—';
+  } else if (table === 'ftth_data') {
+    serviceType = 'FTTH';
+    plan = r.ftth_plan || '—';
+    circuitId = r.ont_id || r.phone_no || '—';
+    billingAccountNo = r.billing_account_no || '—';
+    dateOfCommission = r.service_start_date || '—';
+    address = r.address || '—';
   } else if (table === 'toll_free') {
     const parsed = parseAddressForExport(r.address);
     serviceType = isElection ? 'Election Commission (Toll Free)' : 'Toll Free';

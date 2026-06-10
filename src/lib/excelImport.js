@@ -154,6 +154,18 @@ export const prepareServiceRow = (row, serviceName) => {
       tip_no: getVal(row, "TIP No") || null,
       drp_contact_no: getVal(row, "DRP Contact No") || null
     };
+  } else if (table === 'ftth_data') {
+    return {
+      customer_name: companyName,
+      phone_no: contactNo || getVal(row, "Phone No", "Mobile") || null,
+      billing_account_no: billingAccountNo,
+      ftth_plan: plan || getVal(row, "FTTH Plan", "Plan") || null,
+      ont_id: getVal(row, "ONT ID", "ONT") || circuitId || null,
+      area: getVal(row, "Area", "Area / Location") || location || null,
+      email_address: mailId,
+      service_start_date: dateOfCommission || getVal(row, "Service Start Date") || null,
+      address: getVal(row, "Installation Address", "Address") || null,
+    };
   } else if (table === 'toll_free') {
     return {
       customer_name: companyName,

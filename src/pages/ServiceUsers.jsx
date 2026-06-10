@@ -26,6 +26,7 @@ const getTableInfo = (serviceName) => {
   else if (target.includes('cggb')) table = 'cggb';
   else if (target.includes('tobacco')) table = 'tobacco_board';
   else if (target.includes('nregs')) table = 'nregs';
+  else if (target.includes('ftth')) table = 'ftth_data';
   else if (target.includes('toll')) table = 'toll_free';
 
   return { table, isDOJ, isElection, isCollector, isNHM };
@@ -128,6 +129,19 @@ const getFieldsForTable = (table, serviceName) => {
       { key: 'bbm_no', label: 'BBM No' },
       { key: 'tip_no', label: 'TIP No' },
       { key: 'drp_contact_no', label: 'DRP Contact No' },
+    ];
+  }
+  if (table === 'ftth_data') {
+    return [
+      { key: 'customer_name', label: 'Customer Name', required: true },
+      { key: 'phone_no', label: 'Phone No', required: true },
+      { key: 'billing_account_no', label: 'Billing Account No' },
+      { key: 'ftth_plan', label: 'FTTH Plan' },
+      { key: 'ont_id', label: 'ONT ID' },
+      { key: 'area', label: 'Area / Location' },
+      { key: 'email_address', label: 'Email Address' },
+      { key: 'service_start_date', label: 'Service Start Date' },
+      { key: 'address', label: 'Installation Address' },
     ];
   }
   if (table === 'toll_free') {
@@ -291,6 +305,7 @@ const ServiceUsers = () => {
         else if (target.includes('cggb')) table = 'cggb';
         else if (target.includes('tobacco')) table = 'tobacco_board';
         else if (target.includes('nregs')) table = 'nregs';
+        else if (target.includes('ftth')) table = 'ftth_data';
         else if (target.includes('toll')) table = 'toll_free';
 
         let query = supabase.from(table).select('*');
@@ -521,6 +536,31 @@ const ServiceUsers = () => {
                   { label: 'TIP No', value: r.tip_no || '—' },
                 ]
               };
+            } else if (table === 'ftth_data') {
+              return {
+                id: r.id,
+                companyName: r.customer_name || '—',
+                mailId: r.email_address || '—',
+                location: r.area || '—',
+                circuitId: r.ont_id || r.phone_no || '—',
+                plan: r.ftth_plan || '—',
+                contactNo: r.phone_no || '—',
+                billingAccountNo: r.billing_account_no || '—',
+                dateOfCommission: r.service_start_date || '—',
+                address: r.address || '—',
+                serviceType: 'FTTH',
+                detailFields: [
+                  { label: 'Service Category', value: 'FTTH' },
+                  { label: 'FTTH Plan', value: r.ftth_plan || '—' },
+                  { label: 'ONT ID', value: r.ont_id || '—' },
+                  { label: 'Phone No', value: r.phone_no || '—' },
+                  { label: 'Billing Account', value: r.billing_account_no || '—' },
+                  { label: 'Area / Location', value: r.area || '—' },
+                  { label: 'Email', value: r.email_address || '—' },
+                  { label: 'Service Start Date', value: r.service_start_date || '—' },
+                  { label: 'Installation Address', value: r.address || '—' },
+                ]
+              };
             } else if (table === 'toll_free') {
               const displayServiceType = isElection ? 'Election Commission' : 'Toll Free';
               return {
@@ -684,6 +724,7 @@ const ServiceUsers = () => {
     if (t.includes('sip') || t.includes('pri') || t.includes('toll') || t.includes('election')) return <Phone size={24} className="text-white" />;
     if (t.includes('nregs')) return <RefreshCw size={24} className="text-white" />;
     if (t.includes('cggb')) return <Users size={24} className="text-white" />;
+    if (t.includes('ftth')) return <Zap size={24} className="text-white" />;
     return <Laptop size={24} className="text-white" />;
   };
 
